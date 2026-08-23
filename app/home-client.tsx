@@ -321,6 +321,11 @@ const COPY = {
     digitalFeature3d: "Экосистема поддерживает единый стиль Auto Sale Umar — от презентации до выбора конкретного автомобиля.",
     digitalPrimaryAction: "Открыть каталог",
     digitalSecondaryAction: "Оставить запрос",
+    soldKicker: "УЖЕ НАШЛИ СВОИХ ВЛАДЕЛЬЦЕВ",
+    soldTitle: "Эти автомобили уже проданы.",
+    soldText: "Понравилась модель или комплектация? Мы можем подобрать и привезти такой же автомобиль под заказ.",
+    soldAction: "Заказать такой же",
+    soldStatus: "Продан",
     contactsKicker: "КОНТАКТЫ",
     contactsTitle: "Продолжим там, где удобно вам.",
     contactsText: "Instagram остаётся главным каналом обзоров. Для консультации можно написать или позвонить напрямую.",
@@ -431,6 +436,11 @@ const COPY = {
     digitalFeature3d: "Ekotizim Auto Sale Umar’ning yagona uslubini ta’minlaydi — taqdimotdan aniq avtomobil tanlovigacha.",
     digitalPrimaryAction: "Katalogni ochish",
     digitalSecondaryAction: "So‘rov qoldirish",
+    soldKicker: "O‘Z EGALARINI TOPGAN AVTOMOBILLAR",
+    soldTitle: "Bu avtomobillar allaqachon sotilgan.",
+    soldText: "Model yoki komplektatsiya yoqdimi? Siz uchun xuddi shunday avtomobilni topib, buyurtma asosida olib kelishimiz mumkin.",
+    soldAction: "Xuddi shunday buyurtma qilish",
+    soldStatus: "Sotilgan",
     contactsKicker: "KONTAKTLAR",
     contactsTitle: "Sizga qulay joyda davom etamiz.",
     contactsText: "Instagram asosiy avtomobil sharhlari kanali bo‘lib qoladi. Maslahat uchun yozish yoki qo‘ng‘iroq qilish mumkin.",
@@ -489,6 +499,7 @@ export default function HomeClient() {
   const [introVisible, setIntroVisible] = useState(true);
   const [muted, setMuted] = useState(true);
   const [cars, setCars] = useState<CatalogCar[]>([]);
+  const [soldCars, setSoldCars] = useState<CatalogCar[]>([]);
   const [videos, setVideos] = useState<HomeMediaItem[]>([]);
   const [ramadanGift, setRamadanGift] = useState<RamadanGiftPayload | null>(null);
   const [brand, setBrand] = useState<string>("all");
@@ -551,15 +562,19 @@ export default function HomeClient() {
       fetch("/api/catalog?pageSize=100", { cache: "no-store", headers: { Accept: "application/json" } })
         .then((response) => response.json() as Promise<CatalogResponse>)
         .catch(() => null),
+      fetch("/api/catalog?status=sold&pageSize=100", { cache: "no-store", headers: { Accept: "application/json" } })
+        .then((response) => response.json() as Promise<CatalogResponse>)
+        .catch(() => null),
       fetch("/api/home-media", { cache: "no-store", headers: { Accept: "application/json" } })
         .then((response) => response.json() as Promise<HomeMediaResponse>)
         .catch(() => null),
       fetch("/api/ramadan-gift", { cache: "no-store", headers: { Accept: "application/json" } })
         .then((response) => response.json() as Promise<RamadanGiftResponse>)
         .catch(() => null),
-    ]).then(([catalog, media, ramadan]) => {
+    ]).then(([catalog, soldCatalog, media, ramadan]) => {
       if (cancelled) return;
       if (catalog?.success && Array.isArray(catalog.cars)) setCars(catalog.cars);
+      if (soldCatalog?.success && Array.isArray(soldCatalog.cars)) setSoldCars(soldCatalog.cars);
       if (media?.success && Array.isArray(media.videos)) setVideos(media.videos);
       if (ramadan?.success && ramadan.gift) setRamadanGift(ramadan.gift);
     });
@@ -875,6 +890,8 @@ export default function HomeClient() {
         </div>
       </section>
 
+      <SoldCarsSection cars={soldCars} language={language} />
+
       <DigitalExperienceSection language={language} />
 
       <section className={`${styles.section} ${styles.contactsSection}`} id="contacts">
@@ -938,8 +955,66 @@ export default function HomeClient() {
   );
 }
 
+function SoldCarsSection({ cars, language }: { cars: CatalogCar[]; language: Language }) {
+  const c = COPY[language];
+  if (!cars.length) return null;
+
+  return (
+    <section className={`${styles.section} ${styles.soldSection}`} id="sold-cars">
+      <SectionHeading kicker={c.soldKicker} title={c.soldTitle} text={c.soldText} />
+      <div className={styles.soldRail}>
+        {cars.slice(0, 10).map((car) => {
+          const variantPhoto = car.variants?.flatMap((variant) => variant.photos)[0]?.url ?? null;
+          const imageUrl = car.coverUrl ?? variantPhoto;
+          const href = `/car/?slug=${encodeURIComponent(car.slug)}`;
+          return (
+            <a className={styles.soldCard} href={href} key={car.id} aria-label={`${c.soldAction}: ${car.brand} ${car.model}`}>
+              <div className={styles.soldCardMedia}>
+                {imageUrl ? <img src={imageUrl} alt={`${car.brand} ${car.model}`} loading="lazy" /> : <div className={styles.soldCardPlaceholder}><CarFront /></div>}
+                <span className={styles.soldStatusPill}>{c.soldStatus}</span>
+              </div>
+              <div className={styles.soldCardBody}>
+                <div className={styles.soldCardMeta}>
+                  <span>{car.brand}</span>
+                  {car.year ? <span>{car.year}</span> : null}
+                </div>
+                <h3>{car.model}</h3>
+                {car.trim ? <p>{car.trim}</p> : null}
+                <span className={styles.soldCardAction}>{c.soldAction}<ChevronRight /></span>
+              </div>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function DigitalExperienceSection({ language }: { language: Language }) {
   const c = COPY[language];
+  const [activeIndex, setActiveIndex] = useState(0);
+  const carouselRef = useRef<HTMLDivElement | null>(null);
+
+  function updateActiveDigitalCard() {
+    const rail = carouselRef.current;
+    if (!rail) return;
+    const maxScroll = Math.max(0, rail.scrollWidth - rail.clientWidth);
+    if (maxScroll <= 0) {
+      setActiveIndex(0);
+      return;
+    }
+    const progress = Math.max(0, Math.min(1, rail.scrollLeft / maxScroll));
+    setActiveIndex(Math.round(progress * (DIGITAL_EXPERIENCE_MEDIA.length - 1)));
+  }
+
+  function selectDigitalCard(index: number) {
+    const rail = carouselRef.current;
+    const card = rail?.children.item(index) as HTMLElement | null;
+    if (!rail || !card) return;
+    const paddingLeft = Number.parseFloat(window.getComputedStyle(rail).paddingLeft || "0") || 0;
+    rail.scrollTo({ left: Math.max(0, card.offsetLeft - paddingLeft), behavior: "smooth" });
+    setActiveIndex(index);
+  }
 
   return (
     <section className={`${styles.section} ${styles.digitalSection}`} id="ecosystem">
@@ -956,7 +1031,7 @@ function DigitalExperienceSection({ language }: { language: Language }) {
           </div>
         </div>
 
-        <div className={styles.digitalCarousel}>
+        <div className={styles.digitalCarousel} ref={carouselRef} onScroll={updateActiveDigitalCard}>
           {DIGITAL_EXPERIENCE_MEDIA.map((item) => (
             <figure className={styles.digitalCarouselCard} key={item.image}>
               <div className={styles.digitalCarouselImage}>
@@ -967,6 +1042,18 @@ function DigitalExperienceSection({ language }: { language: Language }) {
                 <span>{language === "ru" ? item.ruText : item.uzText}</span>
               </figcaption>
             </figure>
+          ))}
+        </div>
+
+        <div className={styles.digitalCarouselDots} aria-label={language === "ru" ? "Карточки экосистемы" : "Ekotizim kartalari"}>
+          {DIGITAL_EXPERIENCE_MEDIA.map((item, index) => (
+            <button
+              type="button"
+              key={item.image}
+              data-active={activeIndex === index}
+              aria-label={language === "ru" ? `Карточка ${index + 1}` : `${index + 1}-karta`}
+              onClick={() => selectDigitalCard(index)}
+            />
           ))}
         </div>
 
