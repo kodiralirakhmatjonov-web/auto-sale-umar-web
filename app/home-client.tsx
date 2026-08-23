@@ -955,6 +955,68 @@ export default function HomeClient() {
   );
 }
 
+function getSoldCarPhotos(car: CatalogCar): string[] {
+  const urls = [
+    car.coverUrl,
+    ...(car.variants?.flatMap((variant) => variant.photos.map((photo) => photo.url)) ?? []),
+  ].filter((url): url is string => Boolean(url));
+  return Array.from(new Set(urls)).slice(0, 8);
+}
+
+function SoldCarCard({ car, language }: { car: CatalogCar; language: Language }) {
+  const c = COPY[language];
+  const photos = getSoldCarPhotos(car);
+  const href = `/car/?slug=${encodeURIComponent(car.slug)}`;
+  const mediaRef = useRef<HTMLDivElement | null>(null);
+  const [activePhoto, setActivePhoto] = useState(0);
+
+  function updateActivePhoto() {
+    const rail = mediaRef.current;
+    if (!rail || rail.clientWidth <= 0) return;
+    const nextIndex = Math.round(rail.scrollLeft / rail.clientWidth);
+    setActivePhoto(Math.max(0, Math.min(photos.length - 1, nextIndex)));
+  }
+
+  return (
+    <a className={styles.soldCard} href={href} aria-label={`${c.soldAction}: ${car.brand} ${car.model}`}>
+      <div className={styles.soldCardMedia}>
+        {photos.length ? (
+          <div
+            ref={mediaRef}
+            className={styles.soldCardMediaRail}
+            onScroll={updateActivePhoto}
+            onPointerDown={(event) => event.stopPropagation()}
+            onPointerMove={(event) => event.stopPropagation()}
+          >
+            {photos.map((url, index) => (
+              <div className={styles.soldCardMediaSlide} key={`${url}-${index}`}>
+                <img src={url} alt={`${car.brand} ${car.model}`} loading="lazy" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.soldCardPlaceholder}><CarFront /></div>
+        )}
+        <span className={styles.soldStatusPill}>{c.soldStatus}</span>
+        {photos.length > 1 ? (
+          <div className={styles.soldPhotoDots} aria-hidden="true">
+            {photos.map((_, index) => <i key={index} data-active={index === activePhoto} />)}
+          </div>
+        ) : null}
+      </div>
+      <div className={styles.soldCardBody}>
+        <div className={styles.soldCardMeta}>
+          <span>{car.brand}</span>
+          {car.year ? <span>{car.year}</span> : null}
+        </div>
+        <h3>{car.model}</h3>
+        {car.trim ? <p>{car.trim}</p> : null}
+        <span className={styles.soldCardAction}>{c.soldAction}<ChevronRight /></span>
+      </div>
+    </a>
+  );
+}
+
 function SoldCarsSection({ cars, language }: { cars: CatalogCar[]; language: Language }) {
   const c = COPY[language];
   if (!cars.length) return null;
@@ -963,28 +1025,7 @@ function SoldCarsSection({ cars, language }: { cars: CatalogCar[]; language: Lan
     <section className={`${styles.section} ${styles.soldSection}`} id="sold-cars">
       <SectionHeading kicker={c.soldKicker} title={c.soldTitle} text={c.soldText} />
       <div className={styles.soldRail}>
-        {cars.slice(0, 10).map((car) => {
-          const variantPhoto = car.variants?.flatMap((variant) => variant.photos)[0]?.url ?? null;
-          const imageUrl = car.coverUrl ?? variantPhoto;
-          const href = `/car/?slug=${encodeURIComponent(car.slug)}`;
-          return (
-            <a className={styles.soldCard} href={href} key={car.id} aria-label={`${c.soldAction}: ${car.brand} ${car.model}`}>
-              <div className={styles.soldCardMedia}>
-                {imageUrl ? <img src={imageUrl} alt={`${car.brand} ${car.model}`} loading="lazy" /> : <div className={styles.soldCardPlaceholder}><CarFront /></div>}
-                <span className={styles.soldStatusPill}>{c.soldStatus}</span>
-              </div>
-              <div className={styles.soldCardBody}>
-                <div className={styles.soldCardMeta}>
-                  <span>{car.brand}</span>
-                  {car.year ? <span>{car.year}</span> : null}
-                </div>
-                <h3>{car.model}</h3>
-                {car.trim ? <p>{car.trim}</p> : null}
-                <span className={styles.soldCardAction}>{c.soldAction}<ChevronRight /></span>
-              </div>
-            </a>
-          );
-        })}
+        {cars.slice(0, 10).map((car) => <SoldCarCard car={car} language={language} key={car.id} />)}
       </div>
     </section>
   );
