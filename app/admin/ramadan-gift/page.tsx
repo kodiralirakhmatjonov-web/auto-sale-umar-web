@@ -3,6 +3,7 @@
 import { Gift, ImagePlus, Loader2, Save, Trash2 } from 'lucide-react';
 import { ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import AdminChrome from '../_components/AdminChrome';
+import { compressImageForUpload } from '../../_lib/compress-image';
 import styles from './ramadan-gift.module.css';
 
 type Language = 'ru' | 'uz';
@@ -308,12 +309,13 @@ export default function AdminRamadanGiftPage() {
     try {
       for (let index = 0; index < files.length; index += 1) {
         const file = files[index];
+        const optimized = await compressImageForUpload(file);
         const formData = new FormData();
         formData.append('giftId', String(gift.id));
         formData.append('group', group);
         formData.append('sortOrder', String((gift.media?.length ?? 0) + index));
         formData.append('isCover', gift.media.length === 0 && index === 0 ? '1' : '0');
-        formData.append('file', file);
+        formData.append('file', optimized.file, optimized.file.name);
         const response = await fetch('/api/ramadan-gift-media', { method: 'POST', credentials: 'same-origin', body: formData });
         const data = await response.json().catch(() => null) as { success?: boolean; error?: string } | null;
         if (!response.ok || !data?.success) throw new Error(data?.error || 'Не удалось загрузить фотографию.');

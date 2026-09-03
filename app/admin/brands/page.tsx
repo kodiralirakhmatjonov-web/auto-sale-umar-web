@@ -3,6 +3,7 @@
 import { ImagePlus, Trash2, Upload } from "lucide-react";
 import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AdminChrome, { type AdminRole } from "../_components/AdminChrome";
+import { compressImageForUpload } from "../../_lib/compress-image";
 import styles from "./brands.module.css";
 
 type Language = "ru" | "uz";
@@ -202,9 +203,10 @@ export default function AdminBrandsPage() {
     try {
       let next = [...covers];
       for (const file of files.slice(0, available)) {
+        const optimized = await compressImageForUpload(file);
         const form = new FormData();
         form.append("brand", selectedBrand);
-        form.append("file", file);
+        form.append("file", optimized.file, optimized.file.name);
         const response = await fetch("/api/brand-media", { method: "POST", credentials: "same-origin", body: form });
         const body = await response.json().catch(() => null) as BrandMediaResponse | null;
         if (response.status === 401) { location.replace("/admin/login/"); return; }

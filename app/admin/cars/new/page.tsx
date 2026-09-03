@@ -11,6 +11,7 @@ import {
 } from "react";
 import styles from "./new-car.module.css";
 import AdminChrome from "../../_components/AdminChrome";
+import { compressImageForUpload } from "../../../_lib/compress-image";
 
 type Theme = "light" | "dark";
 type Language = "ru" | "uz";
@@ -825,7 +826,8 @@ export default function NewCarPage() {
     data.set("group", params.group);
     data.set("sortOrder", String(params.sortOrder));
     data.set("isCover", params.isCover ? "1" : "0");
-    data.set("file", params.photo.file, params.photo.file.name);
+    const optimized = await compressImageForUpload(params.photo.file);
+    data.set("file", optimized.file, optimized.file.name);
 
     const response = await fetch("/api/car-media", {
       method: "POST",
