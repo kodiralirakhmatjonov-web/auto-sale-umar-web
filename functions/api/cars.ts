@@ -3,6 +3,7 @@ import {
   json,
   type Env,
 } from "../_lib/auth";
+import { sanitizePublicVehicleText } from "../_lib/vin-privacy";
 
 export type CarStatus =
   | "in_stock"
@@ -384,10 +385,10 @@ export function toPublicCatalogCar(row: CarListRow) {
     seats: row.seats,
     exteriorColor: row.exterior_color,
     interiorColor: row.interior_color,
-    shortDescriptionRu: row.short_description_ru,
-    shortDescriptionUz: row.short_description_uz,
-    descriptionRu: row.description_ru,
-    descriptionUz: row.description_uz,
+    shortDescriptionRu: sanitizePublicVehicleText(row.short_description_ru, [row.vin]),
+    shortDescriptionUz: sanitizePublicVehicleText(row.short_description_uz, [row.vin]),
+    descriptionRu: sanitizePublicVehicleText(row.description_ru, [row.vin]),
+    descriptionUz: sanitizePublicVehicleText(row.description_uz, [row.vin]),
     isNew: row.is_new === 1,
     isNewArrival: row.is_new_arrival === 1,
     isFeatured: row.is_featured === 1,
@@ -836,10 +837,15 @@ export async function onRequestPost(context: {
   const driveType = nullableText(body.driveType, 80);
   const transmission = nullableText(body.transmission, 80) ?? "automatic";
 
-  const descriptionRuInput = nullableText(body.descriptionRu, 10_000);
-  const descriptionUzInput = nullableText(body.descriptionUz, 10_000);
-  const shortDescriptionRuInput = nullableText(body.shortDescriptionRu, 220);
-  const shortDescriptionUzInput = nullableText(body.shortDescriptionUz, 220);
+  const descriptionRuInputRaw = nullableText(body.descriptionRu, 10_000);
+  const descriptionUzInputRaw = nullableText(body.descriptionUz, 10_000);
+  const shortDescriptionRuInputRaw = nullableText(body.shortDescriptionRu, 220);
+  const shortDescriptionUzInputRaw = nullableText(body.shortDescriptionUz, 220);
+  const submittedVins = variants.map((variant) => variant.vin);
+  const descriptionRuInput = descriptionRuInputRaw ? (sanitizePublicVehicleText(descriptionRuInputRaw, submittedVins) || null) : null;
+  const descriptionUzInput = descriptionUzInputRaw ? (sanitizePublicVehicleText(descriptionUzInputRaw, submittedVins) || null) : null;
+  const shortDescriptionRuInput = shortDescriptionRuInputRaw ? (sanitizePublicVehicleText(shortDescriptionRuInputRaw, submittedVins) || null) : null;
+  const shortDescriptionUzInput = shortDescriptionUzInputRaw ? (sanitizePublicVehicleText(shortDescriptionUzInputRaw, submittedVins) || null) : null;
 
   const priceOnRequestInput = parseBoolean(body.priceOnRequest, price == null);
   const priceOnRequest = priceOnRequestInput || price == null;

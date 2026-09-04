@@ -1,5 +1,6 @@
 import { json, type Env } from "../_lib/auth";
 import { loadWeeklyCarViews } from "../_lib/car-views";
+import { ensureVinPrivacyCleanup } from "../_lib/vin-privacy";
 import {
   CAR_SELECT,
   isCarStatus,
@@ -238,6 +239,8 @@ export async function onRequestGet(context: {
   if (!env.DB) {
     return json({ success: false, error: "Каталог временно недоступен." }, 500);
   }
+
+  await ensureVinPrivacyCleanup(env);
 
   const url = new URL(request.url);
   const slug = normalizeText(url.searchParams.get("slug"), 140);

@@ -1,4 +1,5 @@
 import { getAuthenticatedUser, json, type Env } from "../_lib/auth";
+import { sanitizePublicVehicleText } from "../_lib/vin-privacy";
 
 type CarStatus = "in_stock" | "in_showroom" | "in_transit" | "made_to_order" | "reserved" | "sold" | "hidden";
 type Currency = "USD" | "UZS" | "EUR";
@@ -501,10 +502,15 @@ export async function onRequestPatch(context: { request: Request; env: DetailEnv
   const brandId = await ensureBrand(env, brand);
 
   const firstVariant = variants[0];
-  const shortRu = nullableText(body.shortDescriptionRu, 220) ?? `${brand} ${model}`;
-  const shortUz = nullableText(body.shortDescriptionUz, 220) ?? `${brand} ${model}`;
-  const descRu = nullableText(body.descriptionRu, 10_000) ?? shortRu;
-  const descUz = nullableText(body.descriptionUz, 10_000) ?? shortUz;
+  const submittedVins = variants.map((variant) => variant.vin);
+  const shortRuRaw = nullableText(body.shortDescriptionRu, 220) ?? `${brand} ${model}`;
+  const shortUzRaw = nullableText(body.shortDescriptionUz, 220) ?? `${brand} ${model}`;
+  const descRuRaw = nullableText(body.descriptionRu, 10_000) ?? shortRuRaw;
+  const descUzRaw = nullableText(body.descriptionUz, 10_000) ?? shortUzRaw;
+  const shortRu = sanitizePublicVehicleText(shortRuRaw, submittedVins) || `${brand} ${model}`;
+  const shortUz = sanitizePublicVehicleText(shortUzRaw, submittedVins) || `${brand} ${model}`;
+  const descRu = sanitizePublicVehicleText(descRuRaw, submittedVins) || shortRu;
+  const descUz = sanitizePublicVehicleText(descUzRaw, submittedVins) || shortUz;
 
   try {
     await env.DB.prepare(`
