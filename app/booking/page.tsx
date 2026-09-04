@@ -8,9 +8,10 @@ import {
 } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import styles from "./booking.module.css";
-import PublicChrome from "../_components/PublicChrome";
+import PublicChrome, { type PublicLanguage } from "../_components/PublicChrome";
+import { copyForLanguage, isPublicLanguage, publicLocale, uiText } from "../_lib/public-language";
 
-type Language = "ru" | "uz";
+type Language = PublicLanguage;
 type ThemeMode = "system" | "light" | "dark";
 type ResolvedTheme = "light" | "dark";
 
@@ -154,12 +155,12 @@ export default function BookingPage() {
   const [success, setSuccess] = useState<VisitResponse["visit"] | null>(null);
   const [photoIndex, setPhotoIndex] = useState(0);
   const photoRailRef = useRef<HTMLDivElement | null>(null);
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
 
   useEffect(() => {
     try {
       const storedLang = localStorage.getItem("asu-public-language") ?? localStorage.getItem("asu-language");
-      if (storedLang === "uz" || storedLang === "ru") setLanguage(storedLang);
+      if (isPublicLanguage(storedLang)) setLanguage(storedLang);
       const storedTheme = localStorage.getItem("asu-public-theme");
       if (storedTheme === "system" || storedTheme === "light" || storedTheme === "dark") setThemeMode(storedTheme);
     } catch {}
@@ -232,11 +233,11 @@ export default function BookingPage() {
         }),
       });
       const data = await response.json().catch(() => null) as VisitResponse | null;
-      if (!response.ok || !data?.success || !data.visit) throw new Error(data?.error || "Не удалось забронировать визит.");
+      if (!response.ok || !data?.success || !data.visit) throw new Error(uiText(language, "Не удалось забронировать визит.", "Tashrifni band qilib bo‘lmadi."));
       setSuccess(data.visit);
       window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Не удалось забронировать визит.");
+    } catch {
+      setError(uiText(language, "Не удалось забронировать визит.", "Tashrifni band qilib bo‘lmadi."));
     } finally {
       setSubmitting(false);
     }
@@ -301,8 +302,8 @@ export default function BookingPage() {
           <div className={styles.dateRail}>
             {dates.map((item, index) => {
               const value = localIso(item);
-              const dayLabel = index === 0 ? c.tomorrow : new Intl.DateTimeFormat(language === "uz" ? "uz-UZ" : "ru-RU", { weekday: "short" }).format(item);
-              return <button type="button" key={value} data-active={date === value} onClick={() => setDate(value)}><small>{dayLabel}</small><strong>{item.getDate()}</strong><span>{new Intl.DateTimeFormat(language === "uz" ? "uz-UZ" : "ru-RU", { month: "short" }).format(item)}</span></button>;
+              const dayLabel = index === 0 ? c.tomorrow : new Intl.DateTimeFormat(publicLocale(language), { weekday: "short" }).format(item);
+              return <button type="button" key={value} data-active={date === value} onClick={() => setDate(value)}><small>{dayLabel}</small><strong>{item.getDate()}</strong><span>{new Intl.DateTimeFormat(publicLocale(language), { month: "short" }).format(item)}</span></button>;
             })}
           </div>
         </section>
@@ -334,7 +335,7 @@ export default function BookingPage() {
         <section className={styles.formSection}>
           <div className={styles.sectionTitle}><div><small>05</small><h2>{c.details}</h2></div></div>
           <div className={styles.fields}>
-            <label><span>{c.name}</span><input required value={name} onChange={(event) => setName(event.target.value)} placeholder={language === "ru" ? "Имя и фамилия" : "Ism va familiya"} /></label>
+            <label><span>{c.name}</span><input required value={name} onChange={(event) => setName(event.target.value)} placeholder={uiText(language, "Имя и фамилия", "Ism va familiya")} /></label>
             <label><span>{c.phone}</span><input required type="tel" inputMode="tel" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="+998 90 123 45 67" /></label>
             <label className={styles.fullField}><span>{c.note} · {c.optional}</span><textarea value={note} onChange={(event) => setNote(event.target.value.slice(0, 800))} placeholder={c.notePlaceholder} /></label>
           </div>

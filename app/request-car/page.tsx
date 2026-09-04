@@ -10,10 +10,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { type FormEvent, useEffect, useMemo, useState } from "react";
-import PublicChrome from "../_components/PublicChrome";
+import PublicChrome, { type PublicLanguage } from "../_components/PublicChrome";
+import { copyForLanguage, isPublicLanguage, uiText } from "../_lib/public-language";
 import styles from "./request-car.module.css";
 
-type Language = "ru" | "uz";
+type Language = PublicLanguage;
 type ThemeMode = "system" | "light" | "dark";
 type ResolvedTheme = "light" | "dark";
 type ContactChannel = "whatsapp" | "telegram" | "phone";
@@ -140,7 +141,7 @@ const COPY = {
 const TIMING_OPTIONS: PurchaseTiming[] = ["7_days", "30_days", "90_days", "flexible"];
 
 function timingLabel(value: PurchaseTiming, language: Language): string {
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   if (value === "7_days") return c.seven;
   if (value === "30_days") return c.thirty;
   if (value === "90_days") return c.ninety;
@@ -170,12 +171,12 @@ export default function RequestCarPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<RequestResponse["request"] | null>(null);
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
 
   useEffect(() => {
     try {
       const storedLang = localStorage.getItem("asu-public-language") ?? localStorage.getItem("asu-language");
-      if (storedLang === "uz" || storedLang === "ru") setLanguage(storedLang);
+      if (isPublicLanguage(storedLang)) setLanguage(storedLang);
       const storedTheme = localStorage.getItem("asu-public-theme");
       if (storedTheme === "system" || storedTheme === "light" || storedTheme === "dark") setThemeMode(storedTheme);
 
@@ -250,11 +251,11 @@ export default function RequestCarPage() {
         }),
       });
       const data = await response.json().catch(() => null) as RequestResponse | null;
-      if (!response.ok || !data?.success || !data.request) throw new Error(data?.error || "Не удалось отправить запрос.");
+      if (!response.ok || !data?.success || !data.request) throw new Error(uiText(language, "Не удалось отправить запрос.", "So‘rovni yuborib bo‘lmadi."));
       setSuccess(data.request);
       window.scrollTo({ top: 0, behavior: "smooth" });
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Не удалось отправить запрос.");
+    } catch {
+      setError(uiText(language, "Не удалось отправить запрос.", "So‘rovni yuborib bo‘lmadi."));
     } finally {
       setSubmitting(false);
     }
@@ -352,23 +353,23 @@ export default function RequestCarPage() {
             </label>
             <label>
               <span>{c.exterior} <small>{c.optional}</small></span>
-              <input value={exteriorColor} onChange={(event) => setExteriorColor(event.target.value)} maxLength={100} placeholder={language === "ru" ? "Белый" : "Oq"} />
+              <input value={exteriorColor} onChange={(event) => setExteriorColor(event.target.value)} maxLength={100} placeholder={uiText(language, "Белый", "Oq")} />
             </label>
             <label>
               <span>{c.interior} <small>{c.optional}</small></span>
-              <input value={interiorColor} onChange={(event) => setInteriorColor(event.target.value)} maxLength={100} placeholder={language === "ru" ? "Светлый" : "Och"} />
+              <input value={interiorColor} onChange={(event) => setInteriorColor(event.target.value)} maxLength={100} placeholder={uiText(language, "Светлый", "Och")} />
             </label>
             <label className={styles.fullField}>
               <span>{c.options} <small>{c.optional}</small></span>
-              <textarea value={importantOptions} onChange={(event) => setImportantOptions(event.target.value)} maxLength={700} placeholder={language === "ru" ? "Пневмоподвеска, 7 мест, вентиляция сидений…" : "Pnevmatik osma, 7 o‘rin, o‘rindiq ventilyatsiyasi…"} />
+              <textarea value={importantOptions} onChange={(event) => setImportantOptions(event.target.value)} maxLength={700} placeholder={uiText(language, "Пневмоподвеска, 7 мест, вентиляция сидений…", "Pnevmatik osma, 7 o‘rin, o‘rindiq ventilyatsiyasi…")} />
             </label>
           </div>
         </section>
 
         <section className={styles.formSection}>
           <div className={styles.sectionTitle}>
-            <div><span>02</span><h2>{language === "ru" ? "Бюджет и срок" : "Budjet va muddat"}</h2></div>
-            <p>{language === "ru" ? "Эти данные помогают отличить реальный спрос от обычного интереса." : "Bu ma’lumotlar real talabni oddiy qiziqishdan ajratishga yordam beradi."}</p>
+            <div><span>02</span><h2>{uiText(language, "Бюджет и срок", "Budjet va muddat")}</h2></div>
+            <p>{uiText(language, "Эти данные помогают отличить реальный спрос от обычного интереса.", "Bu ma’lumotlar real talabni oddiy qiziqishdan ajratishga yordam beradi.")}</p>
           </div>
 
           <div className={styles.budgetRow}>

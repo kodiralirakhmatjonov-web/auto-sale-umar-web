@@ -2,9 +2,10 @@
 
 import { ArrowLeft, CarFront, ChevronRight, Menu, MessageCircle, Monitor, Moon, Sun, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { copyForLanguage, publicHtmlLang, type PublicLanguage } from "../_lib/public-language";
 import styles from "./public-chrome.module.css";
 
-export type PublicLanguage = "ru" | "uz";
+export type { PublicLanguage } from "../_lib/public-language";
 export type PublicThemeMode = "system" | "light" | "dark";
 export type PublicResolvedTheme = "light" | "dark";
 
@@ -57,8 +58,12 @@ export default function PublicChrome({
   onThemeChange,
 }: PublicChromeProps) {
   const [open, setOpen] = useState(false);
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   const wordmark = resolvedTheme === "dark" ? "/brand/asu-wordmark-white.png" : "/brand/asu-wordmark-black.png";
+
+  useEffect(() => {
+    document.documentElement.lang = publicHtmlLang(language);
+  }, [language]);
 
   useEffect(() => {
     if (!open) return;
@@ -114,9 +119,10 @@ export default function PublicChrome({
           <div className={styles.settings}>
             <div className={styles.settingGroup}>
               <span>{c.language}</span>
-              <div className={styles.segments}>
+              <div className={`${styles.segments} ${styles.languageSegments}`}>
                 <button type="button" data-active={language === "ru"} onClick={() => onLanguageChange("ru")}>RU</button>
                 <button type="button" data-active={language === "uz"} onClick={() => onLanguageChange("uz")}>UZ</button>
+                <button type="button" data-active={language === "uz-cyrl"} onClick={() => onLanguageChange("uz-cyrl")}>ЎЗ</button>
               </div>
             </div>
 

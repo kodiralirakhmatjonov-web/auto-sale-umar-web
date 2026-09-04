@@ -13,6 +13,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { copyForLanguage, isPublicLanguage, publicLocale, uiText } from "../_lib/public-language";
 import { shareCar, warmShareImage } from "../_lib/share-car";
 import PublicChrome, {
   type PublicLanguage,
@@ -231,20 +232,20 @@ function brandLogo(brand: string): string | null {
 }
 
 function formatPrice(car: PublicCar, language: PublicLanguage): string {
-  if (car.priceOnRequest || car.price == null) return COPY[language].priceRequest;
-  const amount = new Intl.NumberFormat(language === "ru" ? "ru-RU" : "uz-UZ", { maximumFractionDigits: 0 }).format(car.price);
+  if (car.priceOnRequest || car.price == null) return copyForLanguage(COPY, language).priceRequest;
+  const amount = new Intl.NumberFormat(publicLocale(language), { maximumFractionDigits: 0 }).format(car.price);
   if (car.currency === "USD") return `${amount} $`;
   if (car.currency === "EUR") return `${amount} €`;
-  return `${amount} сум`;
+  return `${amount} ${uiText(language, "сум", "so‘m")}`;
 }
 
 function countryLabel(code: string | null, language: PublicLanguage): string | null {
   if (!code) return null;
-  return COUNTRY_NAMES[language][code as keyof typeof COUNTRY_NAMES.ru] ?? code;
+  return copyForLanguage(COUNTRY_NAMES, language)[code as keyof typeof COUNTRY_NAMES.ru] ?? code;
 }
 
 function statusLabel(status: CarStatus, language: PublicLanguage): string {
-  return COPY[language][status];
+  return copyForLanguage(COPY, language)[status];
 }
 
 function usePublicPreferences() {
@@ -255,7 +256,7 @@ function usePublicPreferences() {
   useEffect(() => {
     try {
       const storedLanguage = localStorage.getItem("asu-public-language");
-      if (storedLanguage === "ru" || storedLanguage === "uz") setLanguage(storedLanguage);
+      if (isPublicLanguage(storedLanguage)) setLanguage(storedLanguage);
       else if (navigator.language.toLowerCase().startsWith("uz")) setLanguage("uz");
       const storedTheme = localStorage.getItem("asu-public-theme");
       if (storedTheme === "system" || storedTheme === "light" || storedTheme === "dark") setThemeMode(storedTheme);
@@ -317,7 +318,7 @@ function Reveal({ children, className = "" }: { children: ReactNode; className?:
 
 export default function CarPage() {
   const { language, themeMode, resolvedTheme, changeLanguage, changeTheme } = usePublicPreferences();
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   const [car, setCar] = useState<PublicCar | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -342,7 +343,7 @@ export default function CarPage() {
     fetch(`/api/catalog?slug=${encodeURIComponent(slug)}`, { cache: "no-store", headers: { Accept: "application/json" } })
       .then(async (response) => {
         const body = await response.json() as DetailResponse;
-        if (!response.ok || !body.success || !body.car) throw new Error(body.error || c.error);
+        if (!response.ok || !body.success || !body.car) throw new Error(c.error);
         return body.car;
       })
       .then((nextCar) => {
@@ -490,11 +491,11 @@ export default function CarPage() {
   const compareHref = `/compare/?cars=${encodeURIComponent(car.slug)}`;
 
   const specs = [
-    car.horsepowerHp != null ? { label: c.power, value: `${car.horsepowerHp} ${language === "ru" ? "л.с." : "o.k."}` } : null,
-    car.torqueNm != null ? { label: c.torque, value: `${car.torqueNm} Н·м` } : null,
-    car.acceleration0100 != null ? { label: c.acceleration, value: `${car.acceleration0100} с` } : null,
+    car.horsepowerHp != null ? { label: c.power, value: `${car.horsepowerHp} ${uiText(language, "л.с.", "o.k.")}` } : null,
+    car.torqueNm != null ? { label: c.torque, value: `${car.torqueNm} ${uiText(language, "Н·м", "N·m")}` } : null,
+    car.acceleration0100 != null ? { label: c.acceleration, value: `${car.acceleration0100} ${uiText(language, "с", "s")}` } : null,
     car.driveType ? { label: c.drive, value: car.driveType } : null,
-    car.mileageKm != null ? { label: c.mileage, value: `${new Intl.NumberFormat(language === "ru" ? "ru-RU" : "uz-UZ").format(car.mileageKm)} км` } : null,
+    car.mileageKm != null ? { label: c.mileage, value: `${new Intl.NumberFormat(publicLocale(language)).format(car.mileageKm)} ${uiText(language, "км", "km")}` } : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>;
 
   const secondarySpecs = [
@@ -502,9 +503,9 @@ export default function CarPage() {
     car.transmission ? { label: c.transmission, value: car.transmission } : null,
     car.seats != null ? { label: c.seats, value: String(car.seats) } : null,
     countryLabel(car.countryCode, language) ? { label: c.source, value: countryLabel(car.countryCode, language)! } : null,
-    car.topSpeedKmh != null ? { label: c.speed, value: `${car.topSpeedKmh} км/ч` } : null,
-    car.fuelConsumptionL100 != null ? { label: c.economy, value: `${car.fuelConsumptionL100} л/100 км` } : null,
-    car.electricRangeKm != null ? { label: c.range, value: `${car.electricRangeKm} км` } : null,
+    car.topSpeedKmh != null ? { label: c.speed, value: `${car.topSpeedKmh} ${uiText(language, "км/ч", "km/soat")}` } : null,
+    car.fuelConsumptionL100 != null ? { label: c.economy, value: `${car.fuelConsumptionL100} ${uiText(language, "л/100 км", "l/100 km")}` } : null,
+    car.electricRangeKm != null ? { label: c.range, value: `${car.electricRangeKm} ${uiText(language, "км", "km")}` } : null,
     car.arrivalDate ? { label: c.arrival, value: car.arrivalDate } : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>;
 
@@ -609,10 +610,10 @@ export default function CarPage() {
           <Reveal className={styles.performanceNumber}><span>{car.horsepowerHp ?? car.torqueNm ?? car.topSpeedKmh ?? "—"}</span></Reveal>
           <Reveal className={styles.performanceGrid}>
             {[
-              car.horsepowerHp != null ? { value: `${car.horsepowerHp}`, unit: language === "ru" ? "л.с." : "o.k.", label: c.power } : null,
-              car.torqueNm != null ? { value: `${car.torqueNm}`, unit: "Н·м", label: c.torque } : null,
-              car.acceleration0100 != null ? { value: `${car.acceleration0100}`, unit: "с", label: c.acceleration } : null,
-              car.topSpeedKmh != null ? { value: `${car.topSpeedKmh}`, unit: "км/ч", label: c.speed } : null,
+              car.horsepowerHp != null ? { value: `${car.horsepowerHp}`, unit: uiText(language, "л.с.", "o.k."), label: c.power } : null,
+              car.torqueNm != null ? { value: `${car.torqueNm}`, unit: uiText(language, "Н·м", "N·m"), label: c.torque } : null,
+              car.acceleration0100 != null ? { value: `${car.acceleration0100}`, unit: uiText(language, "с", "s"), label: c.acceleration } : null,
+              car.topSpeedKmh != null ? { value: `${car.topSpeedKmh}`, unit: uiText(language, "км/ч", "km/soat"), label: c.speed } : null,
             ].filter(Boolean).map((item) => {
               const metric = item as { value: string; unit: string; label: string };
               return <div key={metric.label}><strong>{metric.value}<small>{metric.unit}</small></strong><span>{metric.label}</span></div>;
@@ -638,14 +639,14 @@ export default function CarPage() {
       {car.variants.length > 1 ? (
         <section className={styles.variantsSection}>
           <Reveal>
-            <p className={styles.kicker}>{language === "ru" ? "ДОСТУПНЫЕ ЦВЕТА" : "MAVJUD RANGLAR"}</p>
-            <h2>{language === "ru" ? "Выберите свой оттенок." : "O‘zingizga mos rangni tanlang."}</h2>
+            <p className={styles.kicker}>{uiText(language, "ДОСТУПНЫЕ ЦВЕТА", "MAVJUD RANGLAR")}</p>
+            <h2>{uiText(language, "Выберите свой оттенок.", "O‘zingizga mos rangni tanlang.")}</h2>
           </Reveal>
           <div className={styles.variantRail}>
             {car.variants.map((variant, index) => (
               <button key={variant.id} type="button" data-active={index === variantIndex} onClick={() => selectVariant(index)}>
                 <i style={{ backgroundColor: variant.exteriorSwatch || "#111214" }} />
-                <span><b>{variant.exteriorColorName || `${language === "ru" ? "Цвет" : "Rang"} ${index + 1}`}</b>{variant.interiorColorName ? <small>{variant.interiorColorName}</small> : null}</span>
+                <span><b>{variant.exteriorColorName || `${uiText(language, "Цвет", "Rang")} ${index + 1}`}</b>{variant.interiorColorName ? <small>{variant.interiorColorName}</small> : null}</span>
               </button>
             ))}
           </div>
@@ -665,7 +666,7 @@ export default function CarPage() {
       {secondarySpecs.length ? (
         <section className={styles.dataSection}>
           <Reveal className={styles.dataCard}>
-            <div className={styles.dataCardHeading}><Gauge /><strong>{language === "ru" ? "Характеристики" : "Xususiyatlar"}</strong></div>
+            <div className={styles.dataCardHeading}><Gauge /><strong>{uiText(language, "Характеристики", "Xususiyatlar")}</strong></div>
             <div className={styles.dataGrid}>{secondarySpecs.map((item) => <div key={item.label}><span>{item.label}</span><b>{item.value}</b></div>)}</div>
           </Reveal>
         </section>

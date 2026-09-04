@@ -24,10 +24,11 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { copyForLanguage, isPublicLanguage, publicHtmlLang, publicLocale, uiText, type PublicLanguage } from "./_lib/public-language";
 import { shareCar, warmShareImage } from "./_lib/share-car";
 import styles from "./home.module.css";
 
-type Language = "ru" | "uz";
+type Language = PublicLanguage;
 type ThemeMode = "system" | "light" | "dark";
 type ResolvedTheme = "light" | "dark";
 type CarStatus = "in_stock" | "in_showroom" | "in_transit" | "made_to_order" | "reserved" | "sold" | "hidden";
@@ -466,23 +467,23 @@ const COPY = {
 const YANDEX_MAPS_URL = "https://yandex.ru/maps/org/auto_sale_umar/98317002086?si=y1pjpr56py0hyc8ar2j2cw1t40";
 
 function formatPrice(car: CatalogCar, language: Language): string {
-  if (car.priceOnRequest || car.price == null) return COPY[language].priceRequest;
-  const value = new Intl.NumberFormat(language === "ru" ? "ru-RU" : "uz-UZ", { maximumFractionDigits: 0 }).format(car.price);
+  if (car.priceOnRequest || car.price == null) return copyForLanguage(COPY, language).priceRequest;
+  const value = new Intl.NumberFormat(publicLocale(language), { maximumFractionDigits: 0 }).format(car.price);
   if (car.currency === "USD") return `${value} $`;
   if (car.currency === "EUR") return `${value} €`;
-  return `${value} сум`;
+  return `${value} ${uiText(language, "сум", "so‘m")}`;
 }
 
 function formatHeroPrice(video: HomeMediaItem, language: Language): string {
-  if (video.priceOnRequest || video.price == null) return COPY[language].priceRequest;
-  const value = new Intl.NumberFormat(language === "ru" ? "ru-RU" : "uz-UZ", { maximumFractionDigits: 0 }).format(video.price);
+  if (video.priceOnRequest || video.price == null) return copyForLanguage(COPY, language).priceRequest;
+  const value = new Intl.NumberFormat(publicLocale(language), { maximumFractionDigits: 0 }).format(video.price);
   if (video.currency === "USD") return `${value} $`;
   if (video.currency === "EUR") return `${value} €`;
-  return `${value} сум`;
+  return `${value} ${uiText(language, "сум", "so‘m")}`;
 }
 
 function statusLabel(status: CarStatus, language: Language): string {
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   if (status === "in_showroom") return c.showroomStatus;
   if (status === "in_stock") return c.inStockStatus;
   if (status === "in_transit") return c.transitStatus;
@@ -511,13 +512,17 @@ export default function HomeClient() {
   useEffect(() => {
     try {
       const storedLanguage = localStorage.getItem("asu-public-language");
-      if (storedLanguage === "uz" || storedLanguage === "ru") setLanguage(storedLanguage);
+      if (isPublicLanguage(storedLanguage)) setLanguage(storedLanguage);
       else if (navigator.language.toLowerCase().startsWith("uz")) setLanguage("uz");
 
       const storedTheme = localStorage.getItem("asu-public-theme");
       if (storedTheme === "system" || storedTheme === "light" || storedTheme === "dark") setThemeMode(storedTheme);
     } catch {}
   }, []);
+
+  useEffect(() => {
+    document.documentElement.lang = publicHtmlLang(language);
+  }, [language]);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -581,7 +586,7 @@ export default function HomeClient() {
     return () => { cancelled = true; };
   }, []);
 
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   const heroVideos = useMemo<HomeMediaItem[]>(() => [
     {
       key: "built-in-intro",
@@ -589,7 +594,7 @@ export default function HomeClient() {
       size: 0,
       uploadedAt: null,
       brand: "AUTO SALE UMAR",
-      model: language === "ru" ? "Премиальный шоурум" : "Premium shourum",
+      model: uiText(language, "Премиальный шоурум", "Premium shourum"),
       price: null,
       currency: "USD",
       priceOnRequest: true,
@@ -717,6 +722,7 @@ export default function HomeClient() {
             <div className={styles.segmented}>
               <button type="button" data-active={language === "ru"} onClick={() => changeLanguage("ru")}>RU</button>
               <button type="button" data-active={language === "uz"} onClick={() => changeLanguage("uz")}>UZ</button>
+              <button type="button" data-active={language === "uz-cyrl"} onClick={() => changeLanguage("uz-cyrl")}>ЎЗ</button>
             </div>
           </div>
           <div className={styles.menuControlGroup}>
@@ -752,7 +758,7 @@ export default function HomeClient() {
               <div className={styles.heroCaption}>
                 <div className={styles.heroCaptionMain}>
                   <span>{video.brand || "AUTO SALE UMAR"}</span>
-                  <strong>{video.model || (language === "ru" ? "Автомобиль" : "Avtomobil")}</strong>
+                  <strong>{video.model || (uiText(language, "Автомобиль", "Avtomobil"))}</strong>
                 </div>
                 <div className={styles.heroCaptionMeta}>
                   <b>{formatHeroPrice(video, language)}</b>
@@ -768,7 +774,7 @@ export default function HomeClient() {
         <SectionHeading kicker={c.brandsKicker} title={c.brandsTitle} text={c.brandsText} />
         <div className={styles.brandRail}>
           <button className={styles.brandCard} type="button" data-active={brand === "all"} onClick={() => setBrand("all")}>
-            <span className={styles.allBrands}><Sparkles /></span><b>{language === "ru" ? "Все" : "Barchasi"}</b>
+            <span className={styles.allBrands}><Sparkles /></span><b>{uiText(language, "Все", "Barchasi")}</b>
           </button>
           {BRANDS.map((item) => (
             <button className={styles.brandCard} type="button" key={item.name} data-active={brand === item.name} onClick={() => setBrand(item.name)}>
@@ -796,13 +802,13 @@ export default function HomeClient() {
               <div className={styles.compareSlot}>
                 <small>01</small>
                 <strong>AUTO</strong>
-                <span>{language === "ru" ? "Ваш выбор" : "Sizning tanlovingiz"}</span>
+                <span>{uiText(language, "Ваш выбор", "Sizning tanlovingiz")}</span>
               </div>
               <div className={styles.compareSwap}><ArrowLeftRight /></div>
               <div className={styles.compareSlot}>
                 <small>02</small>
                 <strong>AUTO</strong>
-                <span>{language === "ru" ? "Альтернатива" : "Alternativa"}</span>
+                <span>{uiText(language, "Альтернатива", "Alternativa")}</span>
               </div>
               <div className={styles.compareAiBadge}><Sparkles /><span>{c.compareAI}</span></div>
             </div>
@@ -811,12 +817,14 @@ export default function HomeClient() {
           <article className={`${styles.smartConsultantCard} ${styles.comparePromoSlide}`}>
             <div className={styles.smartConsultantGlow} aria-hidden="true" />
             <div className={styles.smartConsultantCopy}>
-              <span><Sparkles />{language === "ru" ? "ПЕРСОНАЛЬНАЯ КОНСУЛЬТАЦИЯ" : "SHAXSIY MASLAHAT"}</span>
-              <h2>AUTO SALE UMAR<br />SMART-КОНСУЛЬТАНТ</h2>
-              <p>{language === "ru"
-                ? "Совет перед выбором автомобиля. Укажите модели и то, что для вас важно — консультант сопоставит характеристики и комплектации."
-                : "Avtomobil tanlashdan oldin maslahat. Modellarni va muhim mezonlarni tanlang — maslahatchi xususiyatlar va komplektatsiyalarni solishtiradi."}</p>
-              <a href="/compare/">{language === "ru" ? "Получить совет" : "Maslahat olish"}<ChevronRight /></a>
+              <span><Sparkles />{uiText(language, "ПЕРСОНАЛЬНАЯ КОНСУЛЬТАЦИЯ", "SHAXSIY MASLAHAT")}</span>
+              <h2>AUTO SALE UMAR<br />{uiText(language, "SMART-КОНСУЛЬТАНТ", "SMART-MASLAHATCHI")}</h2>
+              <p>{uiText(
+                language,
+                "Совет перед выбором автомобиля. Укажите модели и то, что для вас важно — консультант сопоставит характеристики и комплектации.",
+                "Avtomobil tanlashdan oldin maslahat. Modellarni va muhim mezonlarni tanlang — maslahatchi xususiyatlar va komplektatsiyalarni solishtiradi.",
+              )}</p>
+              <a href="/compare/">{uiText(language, "Получить совет", "Maslahat olish")}<ChevronRight /></a>
             </div>
             <div className={styles.smartConsultantVisual} aria-hidden="true">
               <div className={styles.smartOrb}><Sparkles /></div>
@@ -837,8 +845,8 @@ export default function HomeClient() {
                 <img src={story.image} alt="Auto Sale Umar showroom" loading={index < 2 ? "eager" : "lazy"} />
               </div>
               <div className={styles.showroomStoryCopy}>
-                <h3>{language === "ru" ? story.ruTitle : story.uzTitle}</h3>
-                <p>{language === "ru" ? story.ruText : story.uzText}</p>
+                <h3>{uiText(language, story.ruTitle, story.uzTitle)}</h3>
+                <p>{uiText(language, story.ruText, story.uzText)}</p>
               </div>
             </article>
           ))}
@@ -880,10 +888,10 @@ export default function HomeClient() {
             onPointerLeave={resumeMarketAutoScroll}
           >
             <div className={styles.marketLoopGroup}>
-              {MARKETS.map((market) => <div className={styles.marketPill} key={`primary-${market.ru}`}><span>{market.flag}</span><b>{market[language]}</b></div>)}
+              {MARKETS.map((market) => <div className={styles.marketPill} key={`primary-${market.ru}`}><span>{market.flag}</span><b>{uiText(language, market.ru, market.uz)}</b></div>)}
             </div>
             <div className={styles.marketLoopGroup} aria-hidden="true">
-              {MARKETS.map((market) => <div className={styles.marketPill} key={`loop-${market.ru}`}><span>{market.flag}</span><b>{market[language]}</b></div>)}
+              {MARKETS.map((market) => <div className={styles.marketPill} key={`loop-${market.ru}`}><span>{market.flag}</span><b>{uiText(language, market.ru, market.uz)}</b></div>)}
             </div>
           </div>
           <p className={styles.exportNote}><Ship />{c.exportNote}</p>
@@ -928,11 +936,13 @@ export default function HomeClient() {
       <footer className={styles.footer}>
         <div className={styles.footerBrand}>
           <img src={wordmark} alt="Auto Sale Umar" />
-          <p className={styles.footerPremium}>{language === "ru"
-            ? "Премиальные автомобили. Точный выбор. Персональное сопровождение."
-            : "Premium avtomobillar. Aniq tanlov. Shaxsiy kuzatuv."}</p>
+          <p className={styles.footerPremium}>{uiText(
+            language,
+            "Премиальные автомобили. Точный выбор. Персональное сопровождение.",
+            "Premium avtomobillar. Aniq tanlov. Shaxsiy kuzatuv.",
+          )}</p>
         </div>
-        <small>Auto Sale Umar 2026 · All rights reserved.</small>
+        <small>Auto Sale Umar 2026 · {uiText(language, "Все права защищены.", "Barcha huquqlar himoyalangan.")}</small>
       </footer>
 
       <section className={`${styles.section} ${styles.developerMiniSection}`} aria-label="AutoSale Umar IT Team">
@@ -964,7 +974,7 @@ function getSoldCarPhotos(car: CatalogCar): string[] {
 }
 
 function SoldCarCard({ car, language }: { car: CatalogCar; language: Language }) {
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   const photos = getSoldCarPhotos(car);
   const href = `/car/?slug=${encodeURIComponent(car.slug)}`;
   const mediaRef = useRef<HTMLDivElement | null>(null);
@@ -1018,7 +1028,7 @@ function SoldCarCard({ car, language }: { car: CatalogCar; language: Language })
 }
 
 function SoldCarsSection({ cars, language }: { cars: CatalogCar[]; language: Language }) {
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   if (!cars.length) return null;
 
   return (
@@ -1032,7 +1042,7 @@ function SoldCarsSection({ cars, language }: { cars: CatalogCar[]; language: Lan
 }
 
 function DigitalExperienceSection({ language }: { language: Language }) {
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   const [activeIndex, setActiveIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement | null>(null);
 
@@ -1066,9 +1076,9 @@ function DigitalExperienceSection({ language }: { language: Language }) {
           <p className={styles.digitalExperienceText}>{c.digitalText}</p>
 
           <div className={styles.digitalExperiencePills}>
-            <span>{language === "ru" ? "Сайт" : "Sayt"}</span>
-            <span>{language === "ru" ? "Приложение" : "Ilova"}</span>
-            <span>{language === "ru" ? "Единая система" : "Yagona tizim"}</span>
+            <span>{uiText(language, "Сайт", "Sayt")}</span>
+            <span>{uiText(language, "Приложение", "Ilova")}</span>
+            <span>{uiText(language, "Единая система", "Yagona tizim")}</span>
           </div>
         </div>
 
@@ -1076,23 +1086,23 @@ function DigitalExperienceSection({ language }: { language: Language }) {
           {DIGITAL_EXPERIENCE_MEDIA.map((item) => (
             <figure className={styles.digitalCarouselCard} key={item.image}>
               <div className={styles.digitalCarouselImage}>
-                <img src={item.image} alt={language === "ru" ? item.ruTitle : item.uzTitle} loading="lazy" />
+                <img src={item.image} alt={uiText(language, item.ruTitle, item.uzTitle)} loading="lazy" />
               </div>
               <figcaption>
-                <strong>{language === "ru" ? item.ruTitle : item.uzTitle}</strong>
-                <span>{language === "ru" ? item.ruText : item.uzText}</span>
+                <strong>{uiText(language, item.ruTitle, item.uzTitle)}</strong>
+                <span>{uiText(language, item.ruText, item.uzText)}</span>
               </figcaption>
             </figure>
           ))}
         </div>
 
-        <div className={styles.digitalCarouselDots} aria-label={language === "ru" ? "Карточки экосистемы" : "Ekotizim kartalari"}>
+        <div className={styles.digitalCarouselDots} aria-label={uiText(language, "Карточки экосистемы", "Ekotizim kartalari")}>
           {DIGITAL_EXPERIENCE_MEDIA.map((item, index) => (
             <button
               type="button"
               key={item.image}
               data-active={activeIndex === index}
-              aria-label={language === "ru" ? `Карточка ${index + 1}` : `${index + 1}-karta`}
+              aria-label={uiText(language, `Карточка ${index + 1}`, `${index + 1}-karta`)}
               onClick={() => selectDigitalCard(index)}
             />
           ))}
@@ -1108,7 +1118,7 @@ function DigitalExperienceSection({ language }: { language: Language }) {
 }
 
 function RamadanGiftSection({ gift, language }: { gift: RamadanGiftPayload; language: Language }) {
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   const cover = gift.media.find((item) => item.isCover) ?? gift.media[0] ?? null;
 
   return (
@@ -1158,7 +1168,7 @@ function SectionHeading({ kicker, title, text }: { kicker: string; title: string
 
 function InventorySection({ id, kicker, title, text, empty, cars, language, requestBrand, catalogStatus }: { id: string; kicker: string; title: string; text: string; empty: string; cars: CatalogCar[]; language: Language; requestBrand: string; catalogStatus: string }) {
   const visibleCars = cars.slice(0, 6);
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   const requestHref = requestBrand !== "all" ? `/request-car/?brand=${encodeURIComponent(requestBrand)}` : "/request-car/";
   const catalogParams = new URLSearchParams();
   if (requestBrand !== "all") catalogParams.set("brand", requestBrand);
@@ -1270,7 +1280,7 @@ function PublicCarCard({ car, language }: { car: CatalogCar; language: Language 
         <button
           className={styles.cardShareButton}
           type="button"
-          aria-label={language === "ru" ? `Поделиться ${car.brand} ${car.model}` : `${car.brand} ${car.model} ulashish`}
+          aria-label={uiText(language, `Поделиться ${car.brand} ${car.model}`, `${car.brand} ${car.model} ulashish`)}
           onClick={(event) => {
             event.stopPropagation();
             void shareCurrentCar();
@@ -1293,7 +1303,7 @@ function PublicCarCard({ car, language }: { car: CatalogCar; language: Language 
           <div className={styles.colorSelector}>
             <div className={styles.colorDots}>
               {variants.map((variant, index) => (
-                <button key={variant.id} type="button" data-active={index === safeVariantIndex} onClick={() => selectVariant(index)} aria-label={variant.exteriorColorName || `${COPY[language].color} ${index + 1}`}>
+                <button key={variant.id} type="button" data-active={index === safeVariantIndex} onClick={() => selectVariant(index)} aria-label={variant.exteriorColorName || `${copyForLanguage(COPY, language).color} ${index + 1}`}>
                   <span style={{ backgroundColor: variant.exteriorSwatch || "#111214" }} />
                 </button>
               ))}
@@ -1302,7 +1312,7 @@ function PublicCarCard({ car, language }: { car: CatalogCar; language: Language 
           </div>
         ) : null}
 
-        <div className={styles.carPrice}><span>{language === "ru" ? "Цена" : "Narx"}</span><b>{formatPrice(car, language)}</b></div>
+        <div className={styles.carPrice}><span>{uiText(language, "Цена", "Narx")}</span><b>{formatPrice(car, language)}</b></div>
       </div>
     </article>
   );

@@ -7,6 +7,7 @@ import PublicChrome, {
   type PublicResolvedTheme,
   type PublicThemeMode,
 } from "../_components/PublicChrome";
+import { copyForLanguage, isPublicLanguage, publicLocale, uiText } from "../_lib/public-language";
 import { shareCar, warmShareImage } from "../_lib/share-car";
 import styles from "./cars.module.css";
 
@@ -144,7 +145,7 @@ function usePublicPreferences() {
   useEffect(() => {
     try {
       const storedLanguage = localStorage.getItem("asu-public-language");
-      if (storedLanguage === "ru" || storedLanguage === "uz") setLanguage(storedLanguage);
+      if (isPublicLanguage(storedLanguage)) setLanguage(storedLanguage);
       const storedTheme = localStorage.getItem("asu-public-theme");
       if (storedTheme === "system" || storedTheme === "light" || storedTheme === "dark") setThemeMode(storedTheme);
     } catch {}
@@ -195,11 +196,11 @@ function firstColor(car: CatalogCar): { name: string | null; swatch: string } | 
 }
 
 function formatPrice(car: CatalogCar, language: PublicLanguage): string {
-  if (car.priceOnRequest || car.price == null) return COPY[language].priceRequest;
-  const value = new Intl.NumberFormat(language === "ru" ? "ru-RU" : "uz-UZ", { maximumFractionDigits: 0 }).format(car.price);
+  if (car.priceOnRequest || car.price == null) return copyForLanguage(COPY, language).priceRequest;
+  const value = new Intl.NumberFormat(publicLocale(language), { maximumFractionDigits: 0 }).format(car.price);
   if (car.currency === "USD") return `${value} $`;
   if (car.currency === "EUR") return `${value} €`;
-  return `${value} сум`;
+  return `${value} ${uiText(language, "сум", "so‘m")}`;
 }
 
 function matchesStatus(car: CatalogCar, filter: CatalogFilterStatus): boolean {
@@ -214,7 +215,7 @@ function normalizeStatusFilter(value: string | null): CatalogFilterStatus {
 }
 
 function CatalogCard({ car, language, layout }: { car: CatalogCar; language: PublicLanguage; layout: CatalogLayout }) {
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   const photo = firstPhoto(car);
   const color = firstColor(car);
   const href = `/car/?slug=${encodeURIComponent(car.slug)}`;
@@ -250,7 +251,7 @@ function CatalogCard({ car, language, layout }: { car: CatalogCar; language: Pub
 
       <div className={styles.cardBody}>
         <div className={styles.cardTopline}>
-          <span>{car.brand.toLocaleUpperCase(language === "ru" ? "ru-RU" : "uz-UZ")}</span>
+          <span>{car.brand.toLocaleUpperCase(publicLocale(language))}</span>
           {car.year ? <b>{car.year}</b> : null}
         </div>
         <h2>{car.model}</h2>
@@ -259,11 +260,11 @@ function CatalogCard({ car, language, layout }: { car: CatalogCar; language: Pub
         {color ? (
           <div className={styles.colorLine}>
             <i style={{ background: color.swatch }} />
-            <span>{color.name || (language === "ru" ? "Цвет кузова" : "Kuzov rangi")}</span>
+            <span>{color.name || (uiText(language, "Цвет кузова", "Kuzov rangi"))}</span>
           </div>
         ) : null}
         <div className={styles.priceLine}>
-          <small>{language === "ru" ? "Цена" : "Narx"}</small>
+          <small>{uiText(language, "Цена", "Narx")}</small>
           <strong>{formatPrice(car, language)}</strong>
         </div>
       </div>
@@ -273,7 +274,7 @@ function CatalogCard({ car, language, layout }: { car: CatalogCar; language: Pub
 
 export default function CarsPage() {
   const { language, themeMode, resolvedTheme, changeLanguage, changeTheme } = usePublicPreferences();
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   const [cars, setCars] = useState<CatalogCar[]>([]);
   const [loading, setLoading] = useState(true);
   const [brand, setBrand] = useState("all");
@@ -368,7 +369,7 @@ export default function CarsPage() {
         <span>{c.text}</span>
       </section>
 
-      <section className={styles.brandSection} aria-label={language === "ru" ? "Фильтр по марке" : "Marka filtri"}>
+      <section className={styles.brandSection} aria-label={uiText(language, "Фильтр по марке", "Marka filtri")}>
         <div className={styles.brandRail}>
           <button type="button" className={styles.brandChip} data-active={brand === "all"} onClick={() => selectBrand("all")}>
             <span><Sparkles /></span><b>{c.allBrands}</b>

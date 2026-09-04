@@ -153,6 +153,7 @@
   border-radius: 999px;
   background: var(--chrome-surface);
 }
+.languageSegments { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .themeSegments { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .segments button {
   min-width: 0;

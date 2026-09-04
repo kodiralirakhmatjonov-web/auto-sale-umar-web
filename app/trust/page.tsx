@@ -15,6 +15,7 @@ import PublicChrome, {
   type PublicResolvedTheme,
   type PublicThemeMode,
 } from "../_components/PublicChrome";
+import { copyForLanguage, isPublicLanguage, uiText } from "../_lib/public-language";
 import styles from "./trust.module.css";
 
 const COPY = {
@@ -96,7 +97,7 @@ function usePublicPreferences() {
   useEffect(() => {
     try {
       const storedLanguage = localStorage.getItem("asu-public-language");
-      if (storedLanguage === "ru" || storedLanguage === "uz") setLanguage(storedLanguage);
+      if (isPublicLanguage(storedLanguage)) setLanguage(storedLanguage);
       const storedTheme = localStorage.getItem("asu-public-theme");
       if (storedTheme === "system" || storedTheme === "light" || storedTheme === "dark") setThemeMode(storedTheme);
     } catch {}
@@ -133,7 +134,7 @@ function usePublicPreferences() {
 
 export default function TrustPage() {
   const { language, themeMode, resolvedTheme, changeLanguage, changeTheme } = usePublicPreferences();
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   const wordmark = resolvedTheme === "dark" ? "/brand/asu-wordmark-white.png" : "/brand/asu-wordmark-black.png";
 
   return (
@@ -222,7 +223,7 @@ export default function TrustPage() {
         <div className={styles.showroomOverlay} />
         <div className={styles.showroomBannerCopy}>
           <img src="/brand/asu-wordmark-white.png" alt="Auto Sale Umar" />
-          <p>{language === "ru" ? "25 лет опыта. Один стандарт — уважение к выбору клиента." : "25 yillik tajriba. Bitta standart — mijoz tanloviga hurmat."}</p>
+          <p>{uiText(language, "25 лет опыта. Один стандарт — уважение к выбору клиента.", "25 yillik tajriba. Bitta standart — mijoz tanloviga hurmat.")}</p>
         </div>
       </section>
 

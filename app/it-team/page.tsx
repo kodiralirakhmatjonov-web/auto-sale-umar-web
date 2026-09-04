@@ -7,6 +7,7 @@ import PublicChrome, {
   type PublicResolvedTheme,
   type PublicThemeMode,
 } from "../_components/PublicChrome";
+import { copyForLanguage, isPublicLanguage } from "../_lib/public-language";
 import styles from "./it-team.module.css";
 
 const COPY = {
@@ -53,7 +54,7 @@ function usePublicPreferences() {
     try {
       const savedLang = localStorage.getItem("asu-public-language");
       const savedTheme = localStorage.getItem("asu-public-theme");
-      if (savedLang === "ru" || savedLang === "uz") setLanguage(savedLang);
+      if (isPublicLanguage(savedLang)) setLanguage(savedLang);
       if (savedTheme === "system" || savedTheme === "light" || savedTheme === "dark") setThemeMode(savedTheme);
     } catch {}
   }, []);
@@ -89,7 +90,7 @@ function usePublicPreferences() {
 
 export default function ITTeamPage() {
   const { language, themeMode, resolvedTheme, changeLanguage, changeTheme } = usePublicPreferences();
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
 
   return (
     <main className={styles.page} data-theme={resolvedTheme}>

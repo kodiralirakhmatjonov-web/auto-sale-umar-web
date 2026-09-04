@@ -16,6 +16,7 @@ import PublicChrome, {
   type PublicResolvedTheme,
   type PublicThemeMode,
 } from "../_components/PublicChrome";
+import { copyForLanguage, isPublicLanguage, publicContentLanguage, publicLocale, uiText } from "../_lib/public-language";
 import styles from "./compare.module.css";
 
 type CarStatus = "in_stock" | "in_showroom" | "in_transit" | "made_to_order" | "reserved" | "sold" | "hidden";
@@ -164,7 +165,7 @@ const COPY = {
     emptyValue: "—",
     aiKicker: "AUTO SALE UMAR · КОНСУЛЬТАНТ",
     aiTitle: "Нужен вывод, а не ещё одна таблица?",
-    aiText: "Укажите, что важно именно вам. VIN используется только сервером для проверки конкретного автомобиля и не публикуется в браузере.",
+    aiText: "Укажите, что важно именно вам. Точные технические данные конкретного автомобиля проверяются системой на сервере и не раскрывают внутренние идентификаторы.",
     criteriaTitle: "В чём именно нужен совет?",
     budget: "Бюджет",
     statusCriterion: "Статус / имидж",
@@ -249,7 +250,7 @@ const COPY = {
     emptyValue: "—",
     aiKicker: "AUTO SALE UMAR · MASLAHATCHI",
     aiTitle: "Yana bir jadval emas, aniq xulosa kerakmi?",
-    aiText: "Siz uchun nima muhimligini belgilang. VIN faqat serverda aniq avtomobilni tekshirish uchun ishlatiladi va brauzerda ko‘rsatilmaydi.",
+    aiText: "Siz uchun nima muhimligini belgilang. Aniq avtomobilning texnik ma’lumotlari tizim tomonidan serverda tekshiriladi va ichki identifikatorlar oshkor qilinmaydi.",
     criteriaTitle: "Qaysi masalada maslahat kerak?",
     budget: "Budjet",
     statusCriterion: "Status / imij",
@@ -313,7 +314,7 @@ const CRITERIA: AdviceCriterion[] = [
   "resale",
 ];
 
-const THINKING_STEPS: Record<PublicLanguage, Record<AiAction, readonly string[]>> = {
+const THINKING_STEPS: Record<"ru" | "uz", Record<AiAction, readonly string[]>> = {
   ru: {
     advice: [
       "Изучаю выбранные автомобили…",
@@ -356,7 +357,7 @@ function usePublicPreferences() {
   useEffect(() => {
     try {
       const storedLanguage = localStorage.getItem("asu-public-language");
-      if (storedLanguage === "ru" || storedLanguage === "uz") setLanguage(storedLanguage);
+      if (isPublicLanguage(storedLanguage)) setLanguage(storedLanguage);
       else if (navigator.language.toLowerCase().startsWith("uz")) setLanguage("uz");
       const storedTheme = localStorage.getItem("asu-public-theme");
       if (storedTheme === "system" || storedTheme === "light" || storedTheme === "dark") setThemeMode(storedTheme);
@@ -415,24 +416,24 @@ function carImage(car: CompareCar): string {
 }
 
 function formatPrice(car: CompareCar, language: PublicLanguage): string {
-  if (car.priceOnRequest || car.price == null) return COPY[language].priceRequest;
-  const value = new Intl.NumberFormat(language === "ru" ? "ru-RU" : "uz-UZ", { maximumFractionDigits: 0 }).format(car.price);
+  if (car.priceOnRequest || car.price == null) return copyForLanguage(COPY, language).priceRequest;
+  const value = new Intl.NumberFormat(publicLocale(language), { maximumFractionDigits: 0 }).format(car.price);
   if (car.currency === "USD") return `${value} $`;
   if (car.currency === "EUR") return `${value} €`;
-  return `${value} ${language === "ru" ? "сум" : "so‘m"}`;
+  return `${value} ${uiText(language, "сум", "so‘m")}`;
 }
 
 function statusLabel(status: CarStatus, language: PublicLanguage): string {
-  return COPY[language][status];
+  return copyForLanguage(COPY, language)[status];
 }
 
 function countryLabel(code: string | null, language: PublicLanguage): string {
-  if (!code) return COPY[language].emptyValue;
-  return COUNTRY_NAMES[language][code as keyof typeof COUNTRY_NAMES.ru] ?? code;
+  if (!code) return copyForLanguage(COPY, language).emptyValue;
+  return copyForLanguage(COUNTRY_NAMES, language)[code as keyof typeof COUNTRY_NAMES.ru] ?? code;
 }
 
 function criterionLabel(criterion: AdviceCriterion, language: PublicLanguage): string {
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   const map: Record<AdviceCriterion, string> = {
     budget: c.budget,
     status: c.statusCriterion,
@@ -449,7 +450,7 @@ function criterionLabel(criterion: AdviceCriterion, language: PublicLanguage): s
 
 export default function ComparePage() {
   const { language, themeMode, resolvedTheme, changeLanguage, changeTheme } = usePublicPreferences();
-  const c = COPY[language];
+  const c = copyForLanguage(COPY, language);
   const [catalog, setCatalog] = useState<CompareCar[]>([]);
   const [details, setDetails] = useState<Record<string, CompareCar>>({});
   const [selectedSlugs, setSelectedSlugs] = useState<string[]>([]);
@@ -485,7 +486,7 @@ export default function ComparePage() {
       .then(async ([catalogResponse, quotaResponse]) => {
         const catalogBody = await catalogResponse.json() as CatalogResponse;
         if (!catalogResponse.ok || catalogBody.success !== true || !Array.isArray(catalogBody.cars)) {
-          throw new Error(catalogBody.error || c.error);
+          throw new Error(c.error);
         }
 
         const active = catalogBody.cars.filter((car) => car.status !== "hidden" && car.status !== "sold");
@@ -573,7 +574,7 @@ export default function ComparePage() {
       setThinkingStep(0);
       return;
     }
-    const steps = THINKING_STEPS[language][aiAction];
+    const steps = copyForLanguage(THINKING_STEPS, language)[aiAction];
     setThinkingStep(0);
     const timer = window.setInterval(() => {
       setThinkingStep((current) => Math.min(current + 1, steps.length - 1));
@@ -618,29 +619,29 @@ export default function ComparePage() {
   const selectedCars = useMemo(() => selectedSlugs.map((slug) => details[slug] ?? catalog.find((car) => car.slug === slug)).filter((car): car is CompareCar => Boolean(car)), [catalog, details, selectedSlugs]);
   const selectedSet = useMemo(() => new Set(selectedSlugs), [selectedSlugs]);
   const pickerCars = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase(language === "ru" ? "ru-RU" : "uz-UZ");
+    const query = search.trim().toLocaleLowerCase(publicLocale(language));
     return catalog.filter((car) => {
       if (!query) return true;
-      return `${car.brand} ${car.model} ${car.trim ?? ""} ${car.year ?? ""}`.toLocaleLowerCase(language === "ru" ? "ru-RU" : "uz-UZ").includes(query);
+      return `${car.brand} ${car.model} ${car.trim ?? ""} ${car.year ?? ""}`.toLocaleLowerCase(publicLocale(language)).includes(query);
     });
   }, [catalog, language, search]);
 
   const tableRows = useMemo(() => {
     const empty = c.emptyValue;
-    const km = (value: number | null | undefined) => value == null ? empty : `${new Intl.NumberFormat(language === "ru" ? "ru-RU" : "uz-UZ").format(value)} км`;
+    const km = (value: number | null | undefined) => value == null ? empty : `${new Intl.NumberFormat(publicLocale(language)).format(value)} ${uiText(language, "км", "km")}`;
     return [
       { label: c.price, value: (car: CompareCar) => formatPrice(car, language) },
       { label: c.status, value: (car: CompareCar) => statusLabel(car.status, language) },
       { label: c.year, value: (car: CompareCar) => car.year ? String(car.year) : empty },
       { label: c.trim, value: (car: CompareCar) => car.trim || empty },
       { label: c.engine, value: (car: CompareCar) => car.engineText || empty },
-      { label: c.displacement, value: (car: CompareCar) => car.engineDisplacementL != null ? `${car.engineDisplacementL} л` : empty },
-      { label: c.power, value: (car: CompareCar) => car.horsepowerHp != null ? `${car.horsepowerHp} ${language === "ru" ? "л.с." : "o.k."}` : empty },
-      { label: c.torque, value: (car: CompareCar) => car.torqueNm != null ? `${car.torqueNm} Н·м` : empty },
-      { label: c.acceleration, value: (car: CompareCar) => car.acceleration0100 != null ? `${car.acceleration0100} с` : empty },
-      { label: c.speed, value: (car: CompareCar) => car.topSpeedKmh != null ? `${car.topSpeedKmh} км/ч` : empty },
-      { label: c.consumption, value: (car: CompareCar) => car.fuelConsumptionL100 != null ? `${car.fuelConsumptionL100} л/100 км` : empty },
-      { label: c.range, value: (car: CompareCar) => car.electricRangeKm != null ? `${car.electricRangeKm} км` : empty },
+      { label: c.displacement, value: (car: CompareCar) => car.engineDisplacementL != null ? `${car.engineDisplacementL} ${uiText(language, "л", "l")}` : empty },
+      { label: c.power, value: (car: CompareCar) => car.horsepowerHp != null ? `${car.horsepowerHp} ${uiText(language, "л.с.", "o.k.")}` : empty },
+      { label: c.torque, value: (car: CompareCar) => car.torqueNm != null ? `${car.torqueNm} ${uiText(language, "Н·м", "N·m")}` : empty },
+      { label: c.acceleration, value: (car: CompareCar) => car.acceleration0100 != null ? `${car.acceleration0100} ${uiText(language, "с", "s")}` : empty },
+      { label: c.speed, value: (car: CompareCar) => car.topSpeedKmh != null ? `${car.topSpeedKmh} ${uiText(language, "км/ч", "km/soat")}` : empty },
+      { label: c.consumption, value: (car: CompareCar) => car.fuelConsumptionL100 != null ? `${car.fuelConsumptionL100} ${uiText(language, "л/100 км", "l/100 km")}` : empty },
+      { label: c.range, value: (car: CompareCar) => car.electricRangeKm != null ? `${car.electricRangeKm} ${uiText(language, "км", "km")}` : empty },
       { label: c.fuel, value: (car: CompareCar) => car.fuelType || empty },
       { label: c.drive, value: (car: CompareCar) => car.driveType || empty },
       { label: c.transmission, value: (car: CompareCar) => car.transmission || empty },
@@ -711,7 +712,7 @@ export default function ComparePage() {
           note: note.trim(),
           budget: budget.trim() ? Number(budget) : null,
           budgetCurrency,
-          language,
+          language: publicContentLanguage(language),
         }),
       });
       const raw = await response.text();
@@ -722,11 +723,10 @@ export default function ComparePage() {
         body = null;
       }
       if (body?.quota) setQuota(body.quota);
-      if (!response.ok || !body?.success || !body.result) throw new Error(body?.error || c.consultantUnavailable);
+      if (!response.ok || !body?.success || !body.result) throw new Error(c.consultantUnavailable);
       setAiResult(body.result);
-    } catch (error) {
-      const message = error instanceof Error ? error.message.trim() : "";
-      setAiError(message && message !== "Load failed" && message !== "Failed to fetch" ? message : c.consultantUnavailable);
+    } catch {
+      setAiError(c.consultantUnavailable);
     } finally {
       setAiAction(null);
     }
@@ -868,8 +868,8 @@ export default function ComparePage() {
               <div className={styles.consultantThinking} aria-live="polite">
                 <span className={styles.thinkingMark}><Sparkles /></span>
                 <div>
-                  <small>AUTO SALE UMAR · {language === "ru" ? "КОНСУЛЬТАНТ" : "MASLAHATCHI"}</small>
-                  <strong key={`${aiAction}-${thinkingStep}`}>{THINKING_STEPS[language][aiAction][thinkingStep]}</strong>
+                  <small>AUTO SALE UMAR · {uiText(language, "КОНСУЛЬТАНТ", "MASLAHATCHI")}</small>
+                  <strong key={`${aiAction}-${thinkingStep}`}>{copyForLanguage(THINKING_STEPS, language)[aiAction][thinkingStep]}</strong>
                 </div>
                 <span className={styles.thinkingDots} aria-hidden="true"><i /><i /><i /></span>
               </div>
@@ -879,14 +879,14 @@ export default function ComparePage() {
               <div className={styles.aiButtonGroup}>
                 <button type="button" disabled aria-disabled="true">
                   <span><Sparkles />{c.advice}</span>
-                  <small>{language === "ru" ? "Недоступно" : "Mavjud emas"}</small>
+                  <small>{uiText(language, "Недоступно", "Mavjud emas")}</small>
                 </button>
                 <p className={styles.aiUnavailableNote}>{c.adviceDemandUnavailable}</p>
               </div>
               <div className={styles.aiButtonGroup}>
                 <button type="button" disabled aria-disabled="true">
                   <span><Search />{c.deep}</span>
-                  <small>{language === "ru" ? "Недоступно" : "Mavjud emas"}</small>
+                  <small>{uiText(language, "Недоступно", "Mavjud emas")}</small>
                 </button>
                 <p className={styles.aiUnavailableNote}>{c.deepDemandUnavailable}</p>
               </div>

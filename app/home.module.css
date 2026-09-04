@@ -233,7 +233,7 @@
   background: var(--surface);
 }
 
-.segmented { grid-template-columns: repeat(2, 1fr); }
+.segmented { grid-template-columns: repeat(3, 1fr); }
 .themeSegmented { grid-template-columns: repeat(3, 1fr); }
 
 .segmented button,
