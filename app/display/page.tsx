@@ -264,6 +264,8 @@ export default function DisplayPage() {
   const [error, setError] = useState(false);
   const [phase, setPhase] = useState<DisplayPhase>("loading");
   const [sceneMode, setSceneMode] = useState<SceneMode>("dark");
+  const [forcedSceneMode, setForcedSceneMode] = useState<SceneMode | null>(null);
+  const [modeReady, setModeReady] = useState(false);
   const [introCycle, setIntroCycle] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenSupported, setFullscreenSupported] = useState(false);
@@ -279,6 +281,16 @@ export default function DisplayPage() {
     currentSlugRef.current = cars[index]?.slug ?? null;
     catalogSignatureRef.current = catalogSignature(cars);
   }, [cars, index]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requestedMode = params.get("mode");
+    if (requestedMode === "light" || requestedMode === "dark") {
+      setForcedSceneMode(requestedMode);
+      setSceneMode(requestedMode);
+    }
+    setModeReady(true);
+  }, []);
 
   useEffect(() => {
     const doc = document as FullscreenDocument;
@@ -481,10 +493,11 @@ export default function DisplayPage() {
   }, []);
 
   useEffect(() => {
+    if (!modeReady) return;
     if (cars.length > 0 && phase === "loading") {
-      startSequence("dark", index);
+      startSequence(forcedSceneMode ?? "dark", index);
     }
-  }, [cars.length, index, phase, startSequence]);
+  }, [cars.length, forcedSceneMode, index, modeReady, phase, startSequence]);
 
   useEffect(() => {
     if (phase !== "intro") return;
@@ -503,13 +516,14 @@ export default function DisplayPage() {
     if (phase !== "catalog" || cars.length === 0) return;
     const rotation = window.setTimeout(() => {
       if (index >= cars.length - 1) {
-        startSequence(sceneMode === "dark" ? "light" : "dark", 0);
+        const nextMode = forcedSceneMode ?? (sceneMode === "dark" ? "light" : "dark");
+        startSequence(nextMode, 0);
         return;
       }
       setIndex((current) => clampIndex(current + 1, cars.length));
     }, ROTATION_MS);
     return () => window.clearTimeout(rotation);
-  }, [cars.length, index, phase, sceneMode, startSequence]);
+  }, [cars.length, forcedSceneMode, index, phase, sceneMode, startSequence]);
 
   const car = cars[index] ?? null;
   const counter = useMemo(() => {
