@@ -610,7 +610,6 @@ export default function DisplayPage() {
               <div className={styles.lightIntroBrand}>
                 <img src="/brand/asu-wordmark-black.png" alt="Auto Sale Umar" />
                 <span>SHOWROOM DISPLAY</span>
-                <strong>TV MODE · SECOND CHAIN</strong>
               </div>
             </motion.section>
           )

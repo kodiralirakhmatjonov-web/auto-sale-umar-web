@@ -832,7 +832,7 @@
 }
 
 .topBarLight > img {
-  width: clamp(156px, 15vw, 360px);
+  width: clamp(234px, 22.5vw, 540px);
   max-width: none;
   animation: none;
 }
@@ -852,14 +852,14 @@
   top: 50%;
   display: grid;
   justify-items: center;
-  gap: clamp(12px, 1vh, 18px);
+  gap: clamp(14px, 1.15vh, 22px);
   transform: translate(-50%, -50%);
   text-align: center;
   color: #111316;
 }
 
 .lightIntroBrand img {
-  width: clamp(420px, 34.5vw, 1080px);
+  width: clamp(630px, 51.75vw, 1620px);
   height: auto;
   object-fit: contain;
 }
@@ -887,20 +887,22 @@
 
 .lightWelcomeCopy {
   position: absolute;
-  left: 50%;
-  top: 44%;
-  width: min(90vw, 1720px);
+  inset: 0;
+  width: min(76vw, 1480px);
+  margin: auto;
+  height: fit-content;
   display: grid;
   justify-items: center;
-  gap: clamp(14px, 1.6vh, 30px);
-  transform: translate(-50%, -50%);
+  align-content: center;
+  gap: clamp(16px, 1.8vh, 34px);
+  transform: translateY(-4vh);
   text-align: center;
   text-transform: uppercase;
 }
 
 .lightWelcomeCopy span {
   color: rgba(17, 19, 22, 0.58);
-  font-size: clamp(18px, 1.25vw, 34px);
+  font-size: clamp(18px, 1.05vw, 30px);
   line-height: 1;
   font-weight: 620;
   letter-spacing: 0.16em;
@@ -911,7 +913,7 @@
   display: block;
   width: 100%;
   color: #111316;
-  font-size: clamp(82px, 7vw, 180px);
+  font-size: clamp(72px, 6.15vw, 156px);
   line-height: 0.92;
   font-weight: 850;
   letter-spacing: -0.065em;
@@ -922,7 +924,7 @@
   position: absolute;
   left: 50%;
   bottom: clamp(64px, 8vh, 150px);
-  width: clamp(420px, 30vw, 960px);
+  width: clamp(630px, 45vw, 1440px);
   height: auto;
   object-fit: contain;
   transform: translateX(-50%);
@@ -1014,9 +1016,9 @@
 
 .lightCarImage {
   background: #ffffff;
-  width: min(100%, 1288px);
-  max-width: min(75.9vw, 1495px);
-  max-height: 66vh;
+  width: min(100%, 1481px);
+  max-width: min(87.3vw, 1719px);
+  max-height: 72vh;
   display: block;
   object-fit: contain;
   object-position: center center;
