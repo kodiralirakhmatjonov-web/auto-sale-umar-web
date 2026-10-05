@@ -495,7 +495,7 @@ export default function DisplayPage() {
   useEffect(() => {
     if (!modeReady) return;
     if (cars.length > 0 && phase === "loading") {
-      startSequence(forcedSceneMode ?? "dark", index);
+      startSequence(forcedSceneMode ?? "light", index);
     }
   }, [cars.length, forcedSceneMode, index, modeReady, phase, startSequence]);
 
@@ -839,7 +839,7 @@ export default function DisplayPage() {
                   className={styles.lightTextBlock}
                   initial={{ opacity: 0, x: -28 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -60 }}
+                  exit={{ opacity: 0, x: 120 }}
                   transition={{ delay: 0.14, duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
                 >
                   <div className={styles.selectionLabelLight}>AUTO SALE UMAR</div>

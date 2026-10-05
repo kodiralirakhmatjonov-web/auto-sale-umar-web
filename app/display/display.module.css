@@ -518,7 +518,7 @@
   aspect-ratio: 1;
   padding: clamp(7px, 0.4vw, 12px);
   border-radius: clamp(14px, 0.85vw, 24px);
-  background: #fff;
+  background: #f4f4f0;
 }
 
 .qrWrap img {
@@ -704,7 +704,7 @@
   left: 50%;
   bottom: clamp(44px, 5.4vh, 104px);
   z-index: 2;
-  width: clamp(280px, 20vw, 640px);
+  width: clamp(420px, 30vw, 960px);
   height: auto;
   object-fit: contain;
   transform: translateX(-50%);
@@ -806,7 +806,7 @@
 .displayRoot[data-scene-mode="light"] {
   --ink: #111316;
   --muted: rgba(17, 19, 22, 0.58);
-  background: #ffffff;
+  background: #f4f4f0;
   color: #111316;
 }
 
@@ -832,16 +832,18 @@
 }
 
 .topBarLight > img {
+  width: clamp(156px, 15vw, 360px);
+  max-width: none;
   animation: none;
 }
 
 .sceneLight::after {
-  background: #fff;
+  background: #f4f4f0;
 }
 
 .lightIntroScene {
   overflow: hidden;
-  background: #ffffff;
+  background: #f4f4f0;
 }
 
 .lightIntroBrand {
@@ -857,7 +859,7 @@
 }
 
 .lightIntroBrand img {
-  width: clamp(280px, 23vw, 720px);
+  width: clamp(420px, 34.5vw, 1080px);
   height: auto;
   object-fit: contain;
 }
@@ -880,7 +882,7 @@
 
 .lightWelcomeScene {
   overflow: hidden;
-  background: #ffffff;
+  background: #f4f4f0;
 }
 
 .lightWelcomeCopy {
@@ -908,13 +910,14 @@
   position: absolute;
   left: 50%;
   bottom: clamp(44px, 5.4vh, 104px);
-  width: clamp(280px, 20vw, 640px);
+  width: clamp(420px, 30vw, 960px);
   height: auto;
   object-fit: contain;
   transform: translateX(-50%);
 }
 
 .lightContent {
+  background: #f4f4f0;
   min-width: 0;
   min-height: 0;
   display: grid;
@@ -989,6 +992,7 @@
 }
 
 .lightVisualWrap {
+  background: #f4f4f0;
   min-width: 0;
   min-height: 0;
   display: grid;
@@ -997,8 +1001,9 @@
 }
 
 .lightCarImage {
-  width: min(100%, 1120px);
-  max-width: min(66vw, 1300px);
+  background: #f4f4f0;
+  width: min(100%, 1288px);
+  max-width: min(75.9vw, 1495px);
   max-height: 66vh;
   display: block;
   object-fit: contain;
