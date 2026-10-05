@@ -608,7 +608,6 @@ export default function DisplayPage() {
               transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className={styles.lightIntroBrand}>
-                <img src="/brand/asu-wordmark-black.png" alt="Auto Sale Umar" />
                 <span>SHOWROOM DISPLAY</span>
               </div>
             </motion.section>
@@ -662,14 +661,6 @@ export default function DisplayPage() {
                 <strong>В ШОУРУМ</strong>
               </motion.div>
 
-              <motion.img
-                className={styles.lightWelcomeLogo}
-                src="/brand/asu-wordmark-black.png"
-                alt="Auto Sale Umar"
-                initial={{ opacity: 0, y: 14 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.42, duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
-              />
             </motion.section>
           )
         ) : !car ? (
@@ -834,16 +825,16 @@ export default function DisplayPage() {
               <div className={styles.lightStage}>
                 <motion.div
                   className={styles.lightTextBlock}
-                  initial={{ opacity: 0, x: 190 }}
+                  initial={{ opacity: 0, x: -200 }}
                   animate={{
                     opacity: 1,
                     x: 0,
-                    transition: { delay: 0.1, duration: 1.08, ease: [0.16, 1, 0.3, 1] },
+                    transition: { delay: 0.12, duration: 1.38, ease: [0.16, 1, 0.3, 1] },
                   }}
                   exit={{
                     opacity: 0,
-                    x: 240,
-                    transition: { delay: 0.08, duration: 0.96, ease: [0.4, 0, 0.2, 1] },
+                    x: 340,
+                    transition: { delay: 0.12, duration: 1.18, ease: [0.4, 0, 0.2, 1] },
                   }}
                 >
                   <div className={styles.selectionLabelLight}>AUTO SALE UMAR</div>
@@ -857,16 +848,16 @@ export default function DisplayPage() {
 
                 <motion.div
                   className={styles.lightVisualWrap}
-                  initial={{ opacity: 0, x: 190 }}
+                  initial={{ opacity: 0, x: -280 }}
                   animate={{
                     opacity: 1,
                     x: 0,
-                    transition: { duration: 1.08, ease: [0.16, 1, 0.3, 1] },
+                    transition: { duration: 1.42, ease: [0.16, 1, 0.3, 1] },
                   }}
                   exit={{
                     opacity: 0,
-                    x: 240,
-                    transition: { duration: 0.96, ease: [0.4, 0, 0.2, 1] },
+                    x: 360,
+                    transition: { duration: 1.2, ease: [0.4, 0, 0.2, 1] },
                   }}
                 >
                   <img

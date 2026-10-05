@@ -832,7 +832,7 @@
 }
 
 .topBarLight > img {
-  width: clamp(234px, 22.5vw, 540px);
+  width: clamp(281px, 27vw, 648px);
   max-width: none;
   animation: none;
 }
@@ -920,15 +920,6 @@
   white-space: nowrap;
 }
 
-.lightWelcomeLogo {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(64px, 8vh, 150px);
-  width: clamp(420px, 30vw, 960px);
-  height: auto;
-  object-fit: contain;
-  transform: translateX(-50%);
-}
 
 .lightContent {
   background: #ffffff;
@@ -1016,9 +1007,9 @@
 
 .lightCarImage {
   background: #ffffff;
-  width: min(100%, 1481px);
-  max-width: min(87.3vw, 1719px);
-  max-height: 72vh;
+  width: min(144%, 2129px);
+  max-width: min(125vw, 2471px);
+  max-height: 88vh;
   display: block;
   object-fit: contain;
   object-position: center center;
