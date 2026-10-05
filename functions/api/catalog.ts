@@ -1,6 +1,7 @@
 import { json, type Env } from "../_lib/auth";
 import { loadWeeklyCarViews } from "../_lib/car-views";
 import { ensureVinPrivacyCleanup } from "../_lib/vin-privacy";
+import { ensureDisplayMediaSettings } from "../_lib/display-media";
 import {
   CAR_SELECT,
   isCarStatus,
@@ -99,6 +100,7 @@ async function loadPublicVariants(env: Env, carIds: number[], includeDetails = f
   const byCar = new Map<number, PublicVariant[]>();
   if (carIds.length === 0) return byCar;
 
+  await ensureDisplayMediaSettings(env);
   const placeholders = carIds.map((_, index) => `?${index + 1}`).join(", ");
   const variantsStatement = (env.DB.prepare(`
     SELECT
@@ -115,15 +117,19 @@ async function loadPublicVariants(env: Env, carIds: number[], includeDetails = f
     ORDER BY v.car_id ASC, v.is_default DESC, v.sort_order ASC, v.id ASC
   `) as unknown as D1ListStatementLike).bind(...carIds);
 
-  const detailClause = includeDetails ? " OR object_key LIKE '%/detail/%'" : "";
+  const detailClause = includeDetails ? " OR m.object_key LIKE '%/detail/%'" : "";
   const mediaStatement = (env.DB.prepare(`
-    SELECT id, car_id, variant_id, public_url, object_key,
-      CASE WHEN object_key LIKE '%/detail/%' THEN 'detail' ELSE photo_group END AS photo_group,
-      is_cover, is_display_cover, display_flip_horizontal, sort_order
-    FROM car_variant_media
-    WHERE car_id IN (${placeholders})
-      AND (photo_group = 'exterior' OR (photo_group = 'interior' AND object_key NOT LIKE '%/detail/%')${detailClause})
-    ORDER BY car_id ASC, variant_id ASC, photo_group ASC, is_cover DESC, sort_order ASC, id ASC
+    SELECT m.id, m.car_id, m.variant_id, m.public_url, m.object_key,
+      CASE WHEN m.object_key LIKE '%/detail/%' THEN 'detail' ELSE m.photo_group END AS photo_group,
+      m.is_cover,
+      COALESCE(ds.is_display_cover, 0) AS is_display_cover,
+      COALESCE(ds.display_flip_horizontal, 0) AS display_flip_horizontal,
+      m.sort_order
+    FROM car_variant_media m
+    LEFT JOIN car_display_media_settings ds ON ds.media_id = m.id
+    WHERE m.car_id IN (${placeholders})
+      AND (m.photo_group = 'exterior' OR (m.photo_group = 'interior' AND m.object_key NOT LIKE '%/detail/%')${detailClause})
+    ORDER BY m.car_id ASC, m.variant_id ASC, m.photo_group ASC, m.is_cover DESC, m.sort_order ASC, m.id ASC
   `) as unknown as D1ListStatementLike).bind(...carIds);
 
   const [variantResult, mediaResult] = await Promise.all([

@@ -1,4 +1,5 @@
 import { getAuthenticatedUser, json, type Env } from "../_lib/auth";
+import { deleteDisplayMediaSetting, ensureDisplayMediaSettings, setDisplayCover, setDisplayFlip } from "../_lib/display-media";
 
 interface R2ObjectBodyLike {
   body: ReadableStream<Uint8Array>;
@@ -233,10 +234,14 @@ export async function onRequestPatch(context: {
     return json({ success: false, error: "Нет изменений для сохранения." }, 400);
   }
 
+  await ensureDisplayMediaSettings(env);
   const media = await env.DB.prepare(
-    `SELECT id, car_id, variant_id, photo_group, is_display_cover, display_flip_horizontal
-     FROM car_variant_media
-     WHERE id = ?1
+    `SELECT m.id, m.car_id, m.variant_id, m.photo_group,
+      COALESCE(ds.is_display_cover, 0) AS is_display_cover,
+      COALESCE(ds.display_flip_horizontal, 0) AS display_flip_horizontal
+     FROM car_variant_media m
+     LEFT JOIN car_display_media_settings ds ON ds.media_id = m.id
+     WHERE m.id = ?1
      LIMIT 1`,
   ).bind(id).first<{
     id: number;
@@ -255,20 +260,21 @@ export async function onRequestPatch(context: {
 
   try {
     if (isDisplayCover != null) {
-      if (isDisplayCover) {
-        await env.DB.prepare(`UPDATE car_variant_media SET is_display_cover = 0 WHERE car_id = ?1`).bind(media.car_id).run();
-      }
-      await env.DB.prepare(`UPDATE car_variant_media SET is_display_cover = ?1 WHERE id = ?2`).bind(isDisplayCover ? 1 : 0, id).run();
+      await setDisplayCover(env, id, media.car_id, isDisplayCover);
     }
 
     if (displayFlipHorizontal != null) {
-      await env.DB.prepare(`UPDATE car_variant_media SET display_flip_horizontal = ?1 WHERE id = ?2`).bind(displayFlipHorizontal ? 1 : 0, id).run();
+      await setDisplayFlip(env, id, media.car_id, displayFlipHorizontal);
     }
 
     const updated = await env.DB.prepare(
-      `SELECT id, car_id, variant_id, public_url, photo_group, is_cover, is_display_cover, display_flip_horizontal, sort_order
-       FROM car_variant_media
-       WHERE id = ?1
+      `SELECT m.id, m.car_id, m.variant_id, m.public_url, m.photo_group, m.is_cover,
+        COALESCE(ds.is_display_cover, 0) AS is_display_cover,
+        COALESCE(ds.display_flip_horizontal, 0) AS display_flip_horizontal,
+        m.sort_order
+       FROM car_variant_media m
+       LEFT JOIN car_display_media_settings ds ON ds.media_id = m.id
+       WHERE m.id = ?1
        LIMIT 1`,
     ).bind(id).first<{
       id: number;
@@ -330,6 +336,7 @@ export async function onRequestDelete(context: {
   if (!media) return json({ success: false, error: "Фотография не найдена." }, 404);
 
   try {
+    await deleteDisplayMediaSetting(env, id);
     await env.DB.prepare(`DELETE FROM car_variant_media WHERE id = ?1`).bind(id).run();
     await env.MEDIA.delete(media.object_key);
 

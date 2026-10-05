@@ -1,4 +1,5 @@
 import { getAuthenticatedUser, json, type Env } from "../_lib/auth";
+import { ensureDisplayMediaSettings } from "../_lib/display-media";
 import { sanitizePublicVehicleText } from "../_lib/vin-privacy";
 
 type CarStatus = "in_stock" | "in_showroom" | "in_transit" | "made_to_order" | "reserved" | "sold" | "hidden";
@@ -302,13 +303,17 @@ async function loadDetail(env: DetailEnv, id: number) {
     ORDER BY v.sort_order ASC, v.id ASC
   `) as unknown as D1ListStatementLike).bind(id).all<VariantRow>();
 
+  await ensureDisplayMediaSettings(env);
   const mediaResult = await (env.DB.prepare(`
-    SELECT id, variant_id, object_key, public_url,
-      CASE WHEN object_key LIKE '%/detail/%' THEN 'detail' ELSE photo_group END AS photo_group,
-      sort_order, is_cover, is_display_cover, display_flip_horizontal
-    FROM car_variant_media
-    WHERE car_id = ?1
-    ORDER BY variant_id ASC, photo_group ASC, sort_order ASC, id ASC
+    SELECT m.id, m.variant_id, m.object_key, m.public_url,
+      CASE WHEN m.object_key LIKE '%/detail/%' THEN 'detail' ELSE m.photo_group END AS photo_group,
+      m.sort_order, m.is_cover,
+      COALESCE(ds.is_display_cover, 0) AS is_display_cover,
+      COALESCE(ds.display_flip_horizontal, 0) AS display_flip_horizontal
+    FROM car_variant_media m
+    LEFT JOIN car_display_media_settings ds ON ds.media_id = m.id
+    WHERE m.car_id = ?1
+    ORDER BY m.variant_id ASC, m.photo_group ASC, m.sort_order ASC, m.id ASC
   `) as unknown as D1ListStatementLike).bind(id).all<MediaRow>();
 
   const media = Array.isArray(mediaResult.results) ? mediaResult.results : [];
