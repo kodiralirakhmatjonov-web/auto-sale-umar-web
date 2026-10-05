@@ -443,7 +443,7 @@ export default function DisplayPage() {
     if (cars.length === 0) return;
 
     const priorityUrls: string[] = [];
-    const priorityCount = Math.min(3, cars.length);
+    const priorityCount = Math.min(8, cars.length);
     for (let offset = 0; offset < priorityCount; offset += 1) {
       const displayCar = cars[(index + offset) % cars.length];
       if (!displayCar) continue;
@@ -469,7 +469,7 @@ export default function DisplayPage() {
 
     const pump = () => {
       if (cancelled) return;
-      const chunkSize = 4;
+      const chunkSize = 12;
       const end = Math.min(pointer + chunkSize, queue.length);
       for (; pointer < end; pointer += 1) {
         warmAsset(queue[pointer] ?? "");
@@ -479,7 +479,7 @@ export default function DisplayPage() {
       }
     };
 
-    timeoutId = window.setTimeout(pump, 260);
+    timeoutId = window.setTimeout(pump, 40);
 
     return () => {
       cancelled = true;
@@ -544,7 +544,7 @@ export default function DisplayPage() {
       <div className={styles.texture} aria-hidden="true" />
       <div className={styles.ambientGlow} aria-hidden="true" />
 
-      {phase === "catalog" ? (
+      {phase === "catalog" && sceneMode === "dark" ? (
         <button
           type="button"
           className={styles.floatingFullscreenButton}
@@ -568,7 +568,7 @@ export default function DisplayPage() {
 
       {fullscreenHint ? <div className={styles.fullscreenNotice}>{fullscreenHint}</div> : null}
 
-      <AnimatePresence initial={false} mode="sync">
+      <AnimatePresence initial={false} mode="wait">
         {phase === "intro" ? (
           sceneMode === "dark" ? (
             <motion.section
@@ -830,54 +830,48 @@ export default function DisplayPage() {
                   </span>
                   <span>{fullscreenLabel}</span>
                 </button>
-
-                <div className={styles.displayMeta} data-tone={sceneMode}>
-                  <span>TV MODE · WHITE</span>
-                  <i aria-hidden="true" />
-                  <time>{formatTime(time)}</time>
-                </div>
               </div>
             </header>
 
             <section className={styles.lightContent}>
               <div className={styles.lightStage}>
-                <motion.img
-                  key={`${image}-${activeAsset.flipped ? "flipped" : "plain"}`}
-                  className={styles.lightCarImage}
-                  style={{ scaleX: activeAsset.flipped ? -1 : 1 }}
-                  src={image}
-                  alt={`${car.brand} ${car.model}`}
-                  loading="eager"
-                  decoding="async"
-                  initial={{ opacity: 0, x: -120 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 180 }}
-                  transition={{ duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
-                  onError={(event: SyntheticEvent<HTMLImageElement>) => {
-                    const target = event.currentTarget;
-                    if (!target.src.endsWith("/intro-poster.jpg")) target.src = "/intro-poster.jpg";
-                  }}
-                />
-
                 <motion.div
                   className={styles.lightTextBlock}
-                  initial={{ opacity: 0, x: 32 }}
+                  initial={{ opacity: 0, x: -28 }}
                   animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -40 }}
-                  transition={{ delay: 0.18, duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
+                  exit={{ opacity: 0, x: -60 }}
+                  transition={{ delay: 0.14, duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  <div className={styles.selectionLabelLight}>AUTO SALE UMAR · SIDE PROFILE</div>
+                  <div className={styles.selectionLabelLight}>AUTO SALE UMAR</div>
                   <div className={styles.lightIdentity}>
-                    <span>{car.brand.toLocaleUpperCase("ru-RU")}</span>
-                    <h1>{car.model.toLocaleUpperCase("ru-RU")}</h1>
-                    {car.trim ? <p>{car.trim}</p> : null}
-                  </div>
-                  <div className={styles.lightMetaLine}>{yearLine || "PREMIUM"}</div>
-                  <div className={styles.lightStatusRow}>
-                    <StatusPill status={car.status} />
-                    <strong className={styles.lightPrice}>{formatPrice(car)}</strong>
+                    <h1>{`${car.brand} ${car.model}`}</h1>
+                    {car.trim ? <p className={styles.lightTrim}>{car.trim}</p> : null}
                   </div>
                   <div className={styles.lightDescription}>{displayDescription(car)}</div>
+                  <strong className={styles.lightPrice}>{formatPrice(car)}</strong>
+                </motion.div>
+
+                <motion.div
+                  className={styles.lightVisualWrap}
+                  initial={{ opacity: 0, x: 90 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 210 }}
+                  transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <img
+                    key={`${image}-${activeAsset.flipped ? "flipped" : "plain"}`}
+                    className={styles.lightCarImage}
+                    style={{ transform: activeAsset.flipped ? "scaleX(-1)" : "none" }}
+                    src={image}
+                    alt={`${car.brand} ${car.model}`}
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
+                    onError={(event: SyntheticEvent<HTMLImageElement>) => {
+                      const target = event.currentTarget;
+                      if (!target.src.endsWith("/intro-poster.jpg")) target.src = "/intro-poster.jpg";
+                    }}
+                  />
                 </motion.div>
               </div>
             </section>
@@ -885,10 +879,6 @@ export default function DisplayPage() {
             <footer className={`${styles.footerBar} ${styles.footerBarLight}`}>
               <div className={`${styles.progressRail} ${styles.progressRailLight}`} aria-hidden="true">
                 <span key={`${sceneMode}-${car.id}-progress`} />
-              </div>
-              <div className={`${styles.footerMeta} ${styles.footerMetaLight}`}>
-                <strong>{counter}</strong>
-                <span>TV MODE 2</span>
               </div>
             </footer>
           </motion.section>

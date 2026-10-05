@@ -806,7 +806,7 @@
 .displayRoot[data-scene-mode="light"] {
   --ink: #111316;
   --muted: rgba(17, 19, 22, 0.58);
-  background: linear-gradient(180deg, #ffffff, #f7f7f3);
+  background: #ffffff;
   color: #111316;
 }
 
@@ -818,25 +818,17 @@
 .fullscreenButton[data-tone="light"],
 .floatingFullscreenButton[data-tone="light"] {
   border-color: rgba(17, 19, 22, 0.12);
-  background: rgba(255, 255, 255, 0.82);
+  background: rgba(255, 255, 255, 0.96);
   color: rgba(17, 19, 22, 0.92);
-  box-shadow: 0 14px 40px rgba(17, 19, 22, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  box-shadow: 0 14px 40px rgba(17, 19, 22, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.92);
 }
 
 .fullscreenButton[data-tone="light"]:hover,
 .fullscreenButton[data-tone="light"]:focus-visible,
 .floatingFullscreenButton[data-tone="light"]:hover,
 .floatingFullscreenButton[data-tone="light"]:focus-visible {
-  background: rgba(255, 255, 255, 0.96);
+  background: #ffffff;
   border-color: rgba(17, 19, 22, 0.18);
-}
-
-.displayMeta[data-tone="light"] {
-  color: rgba(17, 19, 22, 0.68);
-}
-
-.displayMeta[data-tone="light"] i {
-  box-shadow: none;
 }
 
 .topBarLight > img {
@@ -849,7 +841,7 @@
 
 .lightIntroScene {
   overflow: hidden;
-  background: linear-gradient(180deg, #ffffff, #f4f4f0);
+  background: #ffffff;
 }
 
 .lightIntroBrand {
@@ -888,7 +880,7 @@
 
 .lightWelcomeScene {
   overflow: hidden;
-  background: linear-gradient(180deg, #ffffff, #f6f6f2);
+  background: #ffffff;
 }
 
 .lightWelcomeCopy {
@@ -927,131 +919,104 @@
   min-height: 0;
   display: grid;
   align-items: center;
-  padding: clamp(18px, 2vh, 44px) 0 clamp(18px, 2vh, 40px);
+  padding: clamp(8px, 1vh, 20px) 0 clamp(8px, 1vh, 24px);
 }
 
 .lightStage {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1.38fr) minmax(300px, 0.74fr);
+  grid-template-columns: minmax(320px, 0.84fr) minmax(0, 1.16fr);
   align-items: center;
-  gap: clamp(34px, 4vw, 96px);
-}
-
-.lightCarImage {
-  width: 100%;
-  max-width: min(68vw, 1480px);
-  max-height: 64vh;
-  justify-self: center;
-  align-self: center;
-  object-fit: contain;
-  filter: drop-shadow(0 24px 36px rgba(17, 19, 22, 0.14));
-  will-change: transform, opacity;
-}
-
-.lightCarImage[data-flipped="true"] {
-  transform: scaleX(-1);
+  gap: clamp(30px, 3.8vw, 108px);
 }
 
 .lightTextBlock {
   min-width: 0;
   display: grid;
-  gap: clamp(14px, 1.2vh, 26px);
-  padding-right: clamp(6px, 0.5vw, 14px);
+  align-content: center;
+  gap: clamp(16px, 1.45vh, 30px);
+  padding-right: clamp(10px, 0.8vw, 24px);
 }
 
 .selectionLabelLight {
-  color: rgba(17, 19, 22, 0.5);
+  color: rgba(17, 19, 22, 0.48);
   font-size: clamp(12px, 0.8vw, 21px);
   line-height: 1;
-  letter-spacing: 0.07em;
-  font-weight: 560;
+  letter-spacing: 0.16em;
+  font-weight: 620;
+  text-transform: uppercase;
 }
 
 .lightIdentity {
   min-width: 0;
   display: grid;
-  gap: clamp(3px, 0.4vh, 9px);
-}
-
-.lightIdentity > span {
-  color: #111316;
-  font-size: clamp(34px, 2.42vw, 70px);
-  line-height: 0.96;
-  font-weight: 790;
-  letter-spacing: -0.045em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  gap: clamp(10px, 0.8vh, 18px);
 }
 
 .lightIdentity h1 {
   margin: 0;
   color: #111316;
-  font-size: clamp(58px, 4.1vw, 122px);
-  line-height: 0.88;
+  font-size: clamp(64px, 5vw, 136px);
+  line-height: 0.9;
   font-weight: 850;
-  letter-spacing: -0.065em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  letter-spacing: -0.07em;
+  text-wrap: balance;
 }
 
-.lightIdentity p {
+.lightTrim {
   margin: 0;
-  color: rgba(17, 19, 22, 0.56);
-  font-size: clamp(16px, 0.96vw, 30px);
-  line-height: 1.22;
-}
-
-.lightMetaLine {
-  color: rgba(17, 19, 22, 0.74);
-  font-size: clamp(20px, 1.15vw, 34px);
-  line-height: 1.12;
+  color: rgba(17, 19, 22, 0.72);
+  font-size: clamp(24px, 1.4vw, 42px);
+  line-height: 1.08;
   font-weight: 520;
-  text-transform: uppercase;
-}
-
-.lightStatusRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: clamp(14px, 1vw, 26px);
-}
-
-.lightStatusRow .statusPill {
-  border-color: rgba(17, 19, 22, 0.12);
-  background: rgba(17, 19, 22, 0.04);
-  color: rgba(17, 19, 22, 0.8);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-
-.lightPrice {
-  color: #111316;
-  font-size: clamp(22px, 1.35vw, 42px);
-  line-height: 1;
-  font-weight: 760;
   letter-spacing: -0.03em;
 }
 
 .lightDescription {
-  max-width: min(34vw, 560px);
-  color: rgba(17, 19, 22, 0.62);
-  font-size: clamp(15px, 0.92vw, 26px);
-  line-height: 1.5;
+  max-width: min(28vw, 520px);
+  color: rgba(17, 19, 22, 0.56);
+  font-size: clamp(17px, 1.02vw, 28px);
+  line-height: 1.4;
+}
+
+.lightPrice {
+  color: #111316;
+  font-size: clamp(34px, 2.1vw, 64px);
+  line-height: 0.95;
+  font-weight: 800;
+  letter-spacing: -0.055em;
+}
+
+.lightVisualWrap {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  align-items: center;
+  justify-items: end;
+}
+
+.lightCarImage {
+  width: min(100%, 1120px);
+  max-width: min(66vw, 1300px);
+  max-height: 66vh;
+  display: block;
+  object-fit: contain;
+  object-position: center center;
+  filter: drop-shadow(0 26px 36px rgba(17, 19, 22, 0.12));
+  will-change: transform, opacity;
 }
 
 .footerBarLight {
-  min-height: clamp(60px, 6.8vh, 120px);
+  min-height: clamp(38px, 4vh, 74px);
 }
 
 .progressRailLight {
-  background: rgba(17, 19, 22, 0.1);
+  background: rgba(17, 19, 22, 0.08);
 }
 
 .progressRailLight span {
-  background: linear-gradient(90deg, #111316, #6b7278);
+  background: linear-gradient(90deg, #111316, #8d9499);
   box-shadow: none;
 }
 
@@ -1070,11 +1035,6 @@
     gap: 3vh;
   }
 
-  .lightCarImage {
-    max-width: min(86vw, 1200px);
-    max-height: 48vh;
-  }
-
   .lightTextBlock {
     justify-items: center;
     text-align: center;
@@ -1083,6 +1043,15 @@
 
   .lightDescription {
     max-width: min(86vw, 740px);
+  }
+
+  .lightVisualWrap {
+    justify-items: center;
+  }
+
+  .lightCarImage {
+    max-width: min(88vw, 1200px);
+    max-height: 48vh;
   }
 }
 
