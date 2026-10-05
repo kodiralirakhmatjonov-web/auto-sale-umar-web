@@ -859,7 +859,7 @@
 }
 
 .lightIntroBrand img {
-  width: clamp(630px, 51.75vw, 1620px);
+  width: clamp(420px, 34.5vw, 1080px);
   height: auto;
   object-fit: contain;
 }
@@ -924,7 +924,7 @@
   position: absolute;
   left: 50%;
   bottom: clamp(64px, 8vh, 150px);
-  width: clamp(630px, 45vw, 1440px);
+  width: clamp(420px, 30vw, 960px);
   height: auto;
   object-fit: contain;
   transform: translateX(-50%);

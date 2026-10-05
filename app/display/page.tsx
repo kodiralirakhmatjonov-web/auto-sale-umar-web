@@ -800,10 +800,9 @@ export default function DisplayPage() {
           <motion.section
             className={`${styles.scene} ${styles.sceneLight}`}
             key={`${sceneMode}-${car.id}-${car.slug}`}
-            initial={{ opacity: 0 }}
+            initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.15, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 1 }}
           >
             <header className={`${styles.topBar} ${styles.topBarLight}`}>
               <img src="/brand/asu-wordmark-black.png" alt="Auto Sale Umar" />
@@ -835,10 +834,17 @@ export default function DisplayPage() {
               <div className={styles.lightStage}>
                 <motion.div
                   className={styles.lightTextBlock}
-                  initial={{ opacity: 0, x: -28 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 120 }}
-                  transition={{ delay: 0.14, duration: 0.52, ease: [0.22, 1, 0.36, 1] }}
+                  initial={{ opacity: 0, x: 190 }}
+                  animate={{
+                    opacity: 1,
+                    x: 0,
+                    transition: { delay: 0.1, duration: 1.08, ease: [0.16, 1, 0.3, 1] },
+                  }}
+                  exit={{
+                    opacity: 0,
+                    x: 240,
+                    transition: { delay: 0.08, duration: 0.96, ease: [0.4, 0, 0.2, 1] },
+                  }}
                 >
                   <div className={styles.selectionLabelLight}>AUTO SALE UMAR</div>
                   <div className={styles.lightIdentity}>
@@ -851,10 +857,17 @@ export default function DisplayPage() {
 
                 <motion.div
                   className={styles.lightVisualWrap}
-                  initial={{ opacity: 0, x: 90 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 210 }}
-                  transition={{ duration: 0.62, ease: [0.22, 1, 0.36, 1] }}
+                  initial={{ opacity: 0, x: 190 }}
+                  animate={{
+                    opacity: 1,
+                    x: 0,
+                    transition: { duration: 1.08, ease: [0.16, 1, 0.3, 1] },
+                  }}
+                  exit={{
+                    opacity: 0,
+                    x: 240,
+                    transition: { duration: 0.96, ease: [0.4, 0, 0.2, 1] },
+                  }}
                 >
                   <img
                     key={`${image}-${activeAsset.flipped ? "flipped" : "plain"}`}
