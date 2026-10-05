@@ -920,6 +920,15 @@
   white-space: nowrap;
 }
 
+.lightWelcomeLogo {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(48px, 6vh, 112px);
+  width: clamp(280px, 20vw, 640px);
+  height: auto;
+  object-fit: contain;
+  transform: translateX(-50%);
+}
 
 .lightContent {
   background: #ffffff;
@@ -1007,9 +1016,9 @@
 
 .lightCarImage {
   background: #ffffff;
-  width: min(144%, 2129px);
-  max-width: min(125vw, 2471px);
-  max-height: 88vh;
+  width: min(122.4%, 1810px);
+  max-width: min(106.25vw, 2100px);
+  max-height: 74.8vh;
   display: block;
   object-fit: contain;
   object-position: center center;

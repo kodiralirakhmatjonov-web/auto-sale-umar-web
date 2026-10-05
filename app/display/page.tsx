@@ -661,6 +661,14 @@ export default function DisplayPage() {
                 <strong>В ШОУРУМ</strong>
               </motion.div>
 
+              <motion.img
+                className={styles.lightWelcomeLogo}
+                src="/brand/asu-wordmark-black.png"
+                alt="Auto Sale Umar"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.46, duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
+              />
             </motion.section>
           )
         ) : !car ? (
