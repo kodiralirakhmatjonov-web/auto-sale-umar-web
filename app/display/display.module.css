@@ -806,7 +806,7 @@
 .displayRoot[data-scene-mode="light"] {
   --ink: #111316;
   --muted: rgba(17, 19, 22, 0.58);
-  background: #f4f4f0;
+  background: #ffffff;
   color: #111316;
 }
 
@@ -838,12 +838,12 @@
 }
 
 .sceneLight::after {
-  background: #f4f4f0;
+  background: #ffffff;
 }
 
 .lightIntroScene {
   overflow: hidden;
-  background: #f4f4f0;
+  background: #ffffff;
 }
 
 .lightIntroBrand {
@@ -882,34 +882,46 @@
 
 .lightWelcomeScene {
   overflow: hidden;
-  background: #f4f4f0;
+  background: #ffffff;
 }
 
 .lightWelcomeCopy {
   position: absolute;
   left: 50%;
-  top: 46%;
-  width: min(88vw, 1500px);
+  top: 44%;
+  width: min(90vw, 1720px);
   display: grid;
   justify-items: center;
-  gap: clamp(14px, 1.2vh, 24px);
+  gap: clamp(14px, 1.6vh, 30px);
   transform: translate(-50%, -50%);
   text-align: center;
   text-transform: uppercase;
 }
 
+.lightWelcomeCopy span {
+  color: rgba(17, 19, 22, 0.58);
+  font-size: clamp(18px, 1.25vw, 34px);
+  line-height: 1;
+  font-weight: 620;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+}
+
 .lightWelcomeCopy strong {
+  display: block;
+  width: 100%;
   color: #111316;
-  font-size: clamp(100px, 8.1vw, 238px);
-  line-height: 0.86;
-  font-weight: 840;
+  font-size: clamp(82px, 7vw, 180px);
+  line-height: 0.92;
+  font-weight: 850;
   letter-spacing: -0.065em;
+  white-space: nowrap;
 }
 
 .lightWelcomeLogo {
   position: absolute;
   left: 50%;
-  bottom: clamp(44px, 5.4vh, 104px);
+  bottom: clamp(64px, 8vh, 150px);
   width: clamp(420px, 30vw, 960px);
   height: auto;
   object-fit: contain;
@@ -917,7 +929,7 @@
 }
 
 .lightContent {
-  background: #f4f4f0;
+  background: #ffffff;
   min-width: 0;
   min-height: 0;
   display: grid;
@@ -992,7 +1004,7 @@
 }
 
 .lightVisualWrap {
-  background: #f4f4f0;
+  background: #ffffff;
   min-width: 0;
   min-height: 0;
   display: grid;
@@ -1001,7 +1013,7 @@
 }
 
 .lightCarImage {
-  background: #f4f4f0;
+  background: #ffffff;
   width: min(100%, 1288px);
   max-width: min(75.9vw, 1495px);
   max-height: 66vh;

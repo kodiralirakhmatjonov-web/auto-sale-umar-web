@@ -661,7 +661,6 @@ export default function DisplayPage() {
               >
                 <span>ДОБРО ПОЖАЛОВАТЬ</span>
                 <strong>В ШОУРУМ</strong>
-                <small>TV MODE · WHITE SEQUENCE</small>
               </motion.div>
 
               <motion.img
