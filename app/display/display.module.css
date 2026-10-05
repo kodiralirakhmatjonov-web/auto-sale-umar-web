@@ -796,6 +796,296 @@
   to { transform: translateX(-50%) translateY(-6px); }
 }
 
+
+.lightIntroScene,
+.lightWelcomeScene {
+  position: absolute;
+  inset: 0;
+}
+
+.displayRoot[data-scene-mode="light"] {
+  --ink: #111316;
+  --muted: rgba(17, 19, 22, 0.58);
+  background: linear-gradient(180deg, #ffffff, #f7f7f3);
+  color: #111316;
+}
+
+.displayRoot[data-scene-mode="light"] .texture,
+.displayRoot[data-scene-mode="light"] .ambientGlow {
+  opacity: 0;
+}
+
+.fullscreenButton[data-tone="light"],
+.floatingFullscreenButton[data-tone="light"] {
+  border-color: rgba(17, 19, 22, 0.12);
+  background: rgba(255, 255, 255, 0.82);
+  color: rgba(17, 19, 22, 0.92);
+  box-shadow: 0 14px 40px rgba(17, 19, 22, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.fullscreenButton[data-tone="light"]:hover,
+.fullscreenButton[data-tone="light"]:focus-visible,
+.floatingFullscreenButton[data-tone="light"]:hover,
+.floatingFullscreenButton[data-tone="light"]:focus-visible {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(17, 19, 22, 0.18);
+}
+
+.displayMeta[data-tone="light"] {
+  color: rgba(17, 19, 22, 0.68);
+}
+
+.displayMeta[data-tone="light"] i {
+  box-shadow: none;
+}
+
+.topBarLight > img {
+  animation: none;
+}
+
+.sceneLight::after {
+  background: #fff;
+}
+
+.lightIntroScene {
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff, #f4f4f0);
+}
+
+.lightIntroBrand {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  justify-items: center;
+  gap: clamp(12px, 1vh, 18px);
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: #111316;
+}
+
+.lightIntroBrand img {
+  width: clamp(280px, 23vw, 720px);
+  height: auto;
+  object-fit: contain;
+}
+
+.lightIntroBrand span,
+.lightWelcomeCopy span,
+.lightWelcomeCopy small {
+  color: rgba(17, 19, 22, 0.56);
+  font-size: clamp(14px, 0.82vw, 28px);
+  line-height: 1;
+  letter-spacing: 0.08em;
+}
+
+.lightIntroBrand strong {
+  color: rgba(17, 19, 22, 0.96);
+  font-size: clamp(22px, 1.35vw, 42px);
+  line-height: 1.04;
+  letter-spacing: 0.02em;
+}
+
+.lightWelcomeScene {
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff, #f6f6f2);
+}
+
+.lightWelcomeCopy {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: min(88vw, 1500px);
+  display: grid;
+  justify-items: center;
+  gap: clamp(14px, 1.2vh, 24px);
+  transform: translate(-50%, -50%);
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.lightWelcomeCopy strong {
+  color: #111316;
+  font-size: clamp(100px, 8.1vw, 238px);
+  line-height: 0.86;
+  font-weight: 840;
+  letter-spacing: -0.065em;
+}
+
+.lightWelcomeLogo {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(44px, 5.4vh, 104px);
+  width: clamp(280px, 20vw, 640px);
+  height: auto;
+  object-fit: contain;
+  transform: translateX(-50%);
+}
+
+.lightContent {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  align-items: center;
+  padding: clamp(18px, 2vh, 44px) 0 clamp(18px, 2vh, 40px);
+}
+
+.lightStage {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.38fr) minmax(300px, 0.74fr);
+  align-items: center;
+  gap: clamp(34px, 4vw, 96px);
+}
+
+.lightCarImage {
+  width: 100%;
+  max-width: min(68vw, 1480px);
+  max-height: 64vh;
+  justify-self: center;
+  align-self: center;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 36px rgba(17, 19, 22, 0.14));
+  will-change: transform, opacity;
+}
+
+.lightCarImage[data-flipped="true"] {
+  transform: scaleX(-1);
+}
+
+.lightTextBlock {
+  min-width: 0;
+  display: grid;
+  gap: clamp(14px, 1.2vh, 26px);
+  padding-right: clamp(6px, 0.5vw, 14px);
+}
+
+.selectionLabelLight {
+  color: rgba(17, 19, 22, 0.5);
+  font-size: clamp(12px, 0.8vw, 21px);
+  line-height: 1;
+  letter-spacing: 0.07em;
+  font-weight: 560;
+}
+
+.lightIdentity {
+  min-width: 0;
+  display: grid;
+  gap: clamp(3px, 0.4vh, 9px);
+}
+
+.lightIdentity > span {
+  color: #111316;
+  font-size: clamp(34px, 2.42vw, 70px);
+  line-height: 0.96;
+  font-weight: 790;
+  letter-spacing: -0.045em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lightIdentity h1 {
+  margin: 0;
+  color: #111316;
+  font-size: clamp(58px, 4.1vw, 122px);
+  line-height: 0.88;
+  font-weight: 850;
+  letter-spacing: -0.065em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lightIdentity p {
+  margin: 0;
+  color: rgba(17, 19, 22, 0.56);
+  font-size: clamp(16px, 0.96vw, 30px);
+  line-height: 1.22;
+}
+
+.lightMetaLine {
+  color: rgba(17, 19, 22, 0.74);
+  font-size: clamp(20px, 1.15vw, 34px);
+  line-height: 1.12;
+  font-weight: 520;
+  text-transform: uppercase;
+}
+
+.lightStatusRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: clamp(14px, 1vw, 26px);
+}
+
+.lightStatusRow .statusPill {
+  border-color: rgba(17, 19, 22, 0.12);
+  background: rgba(17, 19, 22, 0.04);
+  color: rgba(17, 19, 22, 0.8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.lightPrice {
+  color: #111316;
+  font-size: clamp(22px, 1.35vw, 42px);
+  line-height: 1;
+  font-weight: 760;
+  letter-spacing: -0.03em;
+}
+
+.lightDescription {
+  max-width: min(34vw, 560px);
+  color: rgba(17, 19, 22, 0.62);
+  font-size: clamp(15px, 0.92vw, 26px);
+  line-height: 1.5;
+}
+
+.footerBarLight {
+  min-height: clamp(60px, 6.8vh, 120px);
+}
+
+.progressRailLight {
+  background: rgba(17, 19, 22, 0.1);
+}
+
+.progressRailLight span {
+  background: linear-gradient(90deg, #111316, #6b7278);
+  box-shadow: none;
+}
+
+.footerMetaLight strong,
+.footerMetaLight span {
+  color: rgba(17, 19, 22, 0.72);
+}
+
+.footerMetaLight strong {
+  color: rgba(17, 19, 22, 0.94);
+}
+
+@media (max-aspect-ratio: 5/4) {
+  .lightStage {
+    grid-template-columns: 1fr;
+    gap: 3vh;
+  }
+
+  .lightCarImage {
+    max-width: min(86vw, 1200px);
+    max-height: 48vh;
+  }
+
+  .lightTextBlock {
+    justify-items: center;
+    text-align: center;
+    padding-right: 0;
+  }
+
+  .lightDescription {
+    max-width: min(86vw, 740px);
+  }
+}
+
 @media (max-aspect-ratio: 5/4) {
   .scene {
     padding: 3vh 4vw 2vh;

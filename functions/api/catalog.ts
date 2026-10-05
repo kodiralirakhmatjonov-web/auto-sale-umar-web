@@ -37,6 +37,8 @@ interface PublicMediaRow {
   object_key: string;
   photo_group: "exterior" | "interior" | "detail";
   is_cover: number;
+  is_display_cover: number;
+  display_flip_horizontal: number;
   sort_order: number;
 }
 
@@ -64,18 +66,24 @@ interface PublicVariant {
     id: number;
     url: string;
     isCover: boolean;
+    isDisplayCover: boolean;
+    displayFlipHorizontal: boolean;
     sortOrder: number;
   }>;
   interiorPhotos: Array<{
     id: number;
     url: string;
     isCover: boolean;
+    isDisplayCover: boolean;
+    displayFlipHorizontal: boolean;
     sortOrder: number;
   }>;
   detailPhotos: Array<{
     id: number;
     url: string;
     isCover: boolean;
+    isDisplayCover: boolean;
+    displayFlipHorizontal: boolean;
     sortOrder: number;
   }>;
 }
@@ -111,7 +119,7 @@ async function loadPublicVariants(env: Env, carIds: number[], includeDetails = f
   const mediaStatement = (env.DB.prepare(`
     SELECT id, car_id, variant_id, public_url, object_key,
       CASE WHEN object_key LIKE '%/detail/%' THEN 'detail' ELSE photo_group END AS photo_group,
-      is_cover, sort_order
+      is_cover, is_display_cover, display_flip_horizontal, sort_order
     FROM car_variant_media
     WHERE car_id IN (${placeholders})
       AND (photo_group = 'exterior' OR (photo_group = 'interior' AND object_key NOT LIKE '%/detail/%')${detailClause})
@@ -144,6 +152,8 @@ async function loadPublicVariants(env: Env, carIds: number[], includeDetails = f
           id: media.id,
           url: media.public_url,
           isCover: media.is_cover === 1,
+          isDisplayCover: media.is_display_cover === 1,
+          displayFlipHorizontal: media.display_flip_horizontal === 1,
           sortOrder: media.sort_order,
         })),
       interiorPhotos: (mediaByVariant.get(variant.variant_id) ?? [])
@@ -152,6 +162,8 @@ async function loadPublicVariants(env: Env, carIds: number[], includeDetails = f
           id: media.id,
           url: media.public_url,
           isCover: media.is_cover === 1,
+          isDisplayCover: media.is_display_cover === 1,
+          displayFlipHorizontal: media.display_flip_horizontal === 1,
           sortOrder: media.sort_order,
         })),
       detailPhotos: (mediaByVariant.get(variant.variant_id) ?? [])
@@ -160,6 +172,8 @@ async function loadPublicVariants(env: Env, carIds: number[], includeDetails = f
           id: media.id,
           url: media.public_url,
           isCover: media.is_cover === 1,
+          isDisplayCover: media.is_display_cover === 1,
+          displayFlipHorizontal: media.display_flip_horizontal === 1,
           sortOrder: media.sort_order,
         })),
     });

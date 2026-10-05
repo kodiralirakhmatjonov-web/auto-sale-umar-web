@@ -1538,6 +1538,11 @@
   height: 100%;
   display: block;
   object-fit: cover;
+  transition: transform 180ms ease;
+}
+
+.photoPreview[data-flipped="true"] img {
+  transform: scaleX(-1);
 }
 
 .photoPreview > button {
@@ -1573,6 +1578,75 @@
 
 .photoPreview > button:active {
   transform: scale(.92);
+}
+
+.photoBadges {
+  position: absolute;
+  left: 7px;
+  top: 7px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: calc(100% - 46px);
+}
+
+.photoBadge {
+  min-height: 22px;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(10,10,11,.62);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font-size: 9px;
+  font-weight: 760;
+  letter-spacing: .08em;
+}
+
+.photoBadge[data-tone="accent"] {
+  background: rgba(244, 119, 45, .88);
+}
+
+.photoActions {
+  position: absolute;
+  left: 7px;
+  right: 40px;
+  bottom: 34px;
+  display: flex;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.photoGhostButton {
+  min-width: 32px;
+  height: 28px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(10,10,11,.62);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: .06em;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.photoGhostButton[data-active="true"] {
+  background: rgba(244, 119, 45, .92);
+}
+
+.photoGhostButton:disabled {
+  opacity: .55;
+  cursor: default;
 }
 
 .photoIndex {

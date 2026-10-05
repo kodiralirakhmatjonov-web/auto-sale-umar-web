@@ -37,6 +37,8 @@ interface ExistingPhoto {
   publicUrl: string;
   objectKey: string;
   isCover: boolean;
+  isDisplayCover: boolean;
+  displayFlipHorizontal: boolean;
   sortOrder: number;
 }
 
@@ -111,6 +113,11 @@ interface CreateCarResponse {
 interface MediaResponse {
   success?: boolean;
   error?: string;
+  media?: ExistingPhoto & {
+    carId?: number;
+    variantId?: number;
+    group?: PhotoGroup | string;
+  };
 }
 
 interface MeResponse {
@@ -508,6 +515,7 @@ export default function EditCarPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [savingText, setSavingText] = useState<string | null>(null);
+  const [mediaActionId, setMediaActionId] = useState<number | null>(null);
   const [createdCar, setCreatedCar] = useState<{ id: number; title: string } | null>(null);
   const [aiOpen, setAiOpen] = useState(false);
   const [aiText, setAiText] = useState("");
@@ -801,6 +809,51 @@ export default function EditCarPage() {
       }));
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Не удалось удалить фотографию.");
+    }
+  }
+
+  async function updateExistingPhotoSettings(photoId: number, patch: { isDisplayCover?: boolean; displayFlipHorizontal?: boolean }) {
+    setError(null);
+    setMediaActionId(photoId);
+    try {
+      const response = await fetch("/api/car-media", {
+        method: "PATCH",
+        credentials: "same-origin",
+        cache: "no-store",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ id: photoId, ...patch }),
+      });
+      const data = (await response.json().catch(() => null)) as MediaResponse | null;
+      if (response.status === 401) { location.replace("/admin/login/"); return; }
+      if (!response.ok || !data?.success || !data.media) throw new Error(data?.error || (language === "uz" ? "Suratni yangilab bo‘lmadi." : "Не удалось обновить фотографию."));
+
+      const nextMedia = data.media;
+      setVariants((current) => current.map((variant) => {
+        const syncCollection = (photos: ExistingPhoto[], clearDisplayCover = false) => photos.map((photo) => {
+          if (photo.id === photoId) {
+            return {
+              ...photo,
+              isDisplayCover: typeof nextMedia.isDisplayCover === "boolean" ? nextMedia.isDisplayCover : photo.isDisplayCover,
+              displayFlipHorizontal: typeof nextMedia.displayFlipHorizontal === "boolean" ? nextMedia.displayFlipHorizontal : photo.displayFlipHorizontal,
+            };
+          }
+          if (clearDisplayCover && nextMedia.isDisplayCover) {
+            return { ...photo, isDisplayCover: false };
+          }
+          return photo;
+        });
+
+        return {
+          ...variant,
+          existingExteriorPhotos: syncCollection(variant.existingExteriorPhotos, true),
+          existingInteriorPhotos: syncCollection(variant.existingInteriorPhotos),
+          existingDetailPhotos: syncCollection(variant.existingDetailPhotos),
+        };
+      }));
+    } catch (updateError) {
+      setError(updateError instanceof Error ? updateError.message : (language === "uz" ? "Suratni yangilab bo‘lmadi." : "Не удалось обновить фотографию."));
+    } finally {
+      setMediaActionId((current) => current === photoId ? null : current);
     }
   }
 
@@ -1326,11 +1379,36 @@ export default function EditCarPage() {
                     <label className={styles.field}><span>{t("Количество")}</span><input value={variant.quantity} onChange={(event) => updateVariant(variant.localId, { quantity: event.target.value })} inputMode="numeric" placeholder="1" /></label>
                   </div>
 
-                  <ExistingPhotoRail label={t("Кузов · фотографии")} photos={variant.existingExteriorPhotos} onRemove={(photoId) => deleteExistingPhoto(variant.localId, "exterior", photoId)} />
+                  <ExistingPhotoRail
+                    label={t("Кузов · фотографии")}
+                    photos={variant.existingExteriorPhotos}
+                    group="exterior"
+                    language={language}
+                    busyId={mediaActionId}
+                    onRemove={(photoId) => deleteExistingPhoto(variant.localId, "exterior", photoId)}
+                    onSelectDisplayCover={(photoId) => void updateExistingPhotoSettings(photoId, { isDisplayCover: true })}
+                    onToggleFlip={(photoId, nextValue) => void updateExistingPhotoSettings(photoId, { displayFlipHorizontal: nextValue })}
+                  />
                   <PhotoRail label={variant.existingExteriorPhotos.length ? (language === "uz" ? "Yangi kuzov suratlari" : "Новые фото кузова") : t("Кузов · фотографии")} buttonLabel={t("Добавить фото")} photos={variant.exteriorPhotos} onFiles={(files) => addPhotos(variant.localId, "exterior", files)} onRemove={(photoId) => removePhoto(variant.localId, "exterior", photoId)} />
-                  <ExistingPhotoRail label={t("Салон · фотографии")} photos={variant.existingInteriorPhotos} onRemove={(photoId) => deleteExistingPhoto(variant.localId, "interior", photoId)} />
+                  <ExistingPhotoRail
+                    label={t("Салон · фотографии")}
+                    photos={variant.existingInteriorPhotos}
+                    group="interior"
+                    language={language}
+                    busyId={mediaActionId}
+                    onRemove={(photoId) => deleteExistingPhoto(variant.localId, "interior", photoId)}
+                    onToggleFlip={(photoId, nextValue) => void updateExistingPhotoSettings(photoId, { displayFlipHorizontal: nextValue })}
+                  />
                   <PhotoRail label={variant.existingInteriorPhotos.length ? (language === "uz" ? "Yangi salon suratlari" : "Новые фото салона") : t("Салон · фотографии")} buttonLabel={t("Добавить фото")} photos={variant.interiorPhotos} onFiles={(files) => addPhotos(variant.localId, "interior", files)} onRemove={(photoId) => removePhoto(variant.localId, "interior", photoId)} />
-                  <ExistingPhotoRail label={t("Детали · фотографии")} photos={variant.existingDetailPhotos} onRemove={(photoId) => deleteExistingPhoto(variant.localId, "detail", photoId)} />
+                  <ExistingPhotoRail
+                    label={t("Детали · фотографии")}
+                    photos={variant.existingDetailPhotos}
+                    group="detail"
+                    language={language}
+                    busyId={mediaActionId}
+                    onRemove={(photoId) => deleteExistingPhoto(variant.localId, "detail", photoId)}
+                    onToggleFlip={(photoId, nextValue) => void updateExistingPhotoSettings(photoId, { displayFlipHorizontal: nextValue })}
+                  />
                   <PhotoRail label={variant.existingDetailPhotos.length ? (language === "uz" ? "Yangi detal suratlari" : "Новые фото деталей") : t("Детали · фотографии")} buttonLabel={t("Добавить фото")} photos={variant.detailPhotos} onFiles={(files) => addPhotos(variant.localId, "detail", files)} onRemove={(photoId) => removePhoto(variant.localId, "detail", photoId)} />
                   <p className={styles.photoHint}>{t("Фары, диски, решётка, материалы и уникальные элементы конкретного автомобиля.")}</p>
                 </article>
@@ -1456,19 +1534,77 @@ function ColorPicker({
   );
 }
 
-function ExistingPhotoRail({ label, photos, onRemove }: { label: string; photos: ExistingPhoto[]; onRemove: (id: number) => void }) {
+function ExistingPhotoRail({
+  label,
+  photos,
+  group,
+  language,
+  busyId,
+  onRemove,
+  onSelectDisplayCover,
+  onToggleFlip,
+}: {
+  label: string;
+  photos: ExistingPhoto[];
+  group: PhotoGroup;
+  language: Language;
+  busyId: number | null;
+  onRemove: (id: number) => void;
+  onSelectDisplayCover?: (id: number) => void;
+  onToggleFlip?: (id: number, nextValue: boolean) => void;
+}) {
   if (photos.length === 0) return null;
+
+  const displayCoverLabel = language === "uz" ? "TV-2" : "TV-2";
+  const setDisplayCoverLabel = language === "uz" ? "TV-2 uchun tanlash" : "Выбрать для TV-2";
+  const flipLabel = language === "uz" ? "O‘ngga qarash uchun akslantirish" : "Отразить вправо";
+  const removeLabel = language === "uz" ? "Suratni o‘chirish" : "Удалить фотографию";
+
   return (
     <div className={styles.photoBlock}>
       <div className={styles.photoBlockHeader}><div><strong>{label}</strong><span> · {photos.length}</span></div></div>
       <div className={styles.photoRail}>
-        {photos.map((photo, index) => (
-          <div className={styles.photoPreview} key={photo.id}>
-            <img src={photo.publicUrl} alt="" loading="lazy" />
-            <span className={styles.photoIndex}>{photo.isCover ? "★" : index + 1}</span>
-            <button type="button" onClick={() => onRemove(photo.id)} aria-label="Удалить фотографию"><TrashIcon /></button>
-          </div>
-        ))}
+        {photos.map((photo, index) => {
+          const isBusy = busyId === photo.id;
+          return (
+            <div className={styles.photoPreview} key={photo.id} data-flipped={photo.displayFlipHorizontal ? "true" : "false"}>
+              <img src={photo.publicUrl} alt="" loading="lazy" />
+              <span className={styles.photoIndex}>{photo.isCover ? "★" : index + 1}</span>
+              <div className={styles.photoBadges}>
+                {photo.isCover ? <span className={styles.photoBadge}>TV-1</span> : null}
+                {photo.isDisplayCover ? <span className={styles.photoBadge} data-tone="accent">{displayCoverLabel}</span> : null}
+                {photo.displayFlipHorizontal ? <span className={styles.photoBadge}>↔</span> : null}
+              </div>
+              <div className={styles.photoActions}>
+                {group === "exterior" && onSelectDisplayCover ? (
+                  <button
+                    type="button"
+                    className={styles.photoGhostButton}
+                    data-active={photo.isDisplayCover ? "true" : "false"}
+                    onClick={() => onSelectDisplayCover(photo.id)}
+                    aria-label={setDisplayCoverLabel}
+                    disabled={isBusy}
+                  >
+                    TV-2
+                  </button>
+                ) : null}
+                {onToggleFlip ? (
+                  <button
+                    type="button"
+                    className={styles.photoGhostButton}
+                    data-active={photo.displayFlipHorizontal ? "true" : "false"}
+                    onClick={() => onToggleFlip(photo.id, !photo.displayFlipHorizontal)}
+                    aria-label={flipLabel}
+                    disabled={isBusy}
+                  >
+                    ↔
+                  </button>
+                ) : null}
+              </div>
+              <button type="button" onClick={() => onRemove(photo.id)} aria-label={removeLabel} disabled={isBusy}><TrashIcon /></button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -74,6 +74,8 @@ interface MediaRow {
   photo_group: "exterior" | "interior" | "detail";
   sort_order: number;
   is_cover: number;
+  is_display_cover: number;
+  display_flip_horizontal: number;
 }
 
 interface UpdateVariantInput {
@@ -303,7 +305,7 @@ async function loadDetail(env: DetailEnv, id: number) {
   const mediaResult = await (env.DB.prepare(`
     SELECT id, variant_id, object_key, public_url,
       CASE WHEN object_key LIKE '%/detail/%' THEN 'detail' ELSE photo_group END AS photo_group,
-      sort_order, is_cover
+      sort_order, is_cover, is_display_cover, display_flip_horizontal
     FROM car_variant_media
     WHERE car_id = ?1
     ORDER BY variant_id ASC, photo_group ASC, sort_order ASC, id ASC
@@ -320,13 +322,13 @@ async function loadDetail(env: DetailEnv, id: number) {
     stockNumber: variant.stock_number ?? "",
     quantity: variant.quantity || 1,
     exteriorPhotos: media.filter((item) => item.variant_id === variant.id && item.photo_group === "exterior").map((item) => ({
-      id: item.id, publicUrl: item.public_url, objectKey: item.object_key, isCover: item.is_cover === 1, sortOrder: item.sort_order,
+      id: item.id, publicUrl: item.public_url, objectKey: item.object_key, isCover: item.is_cover === 1, isDisplayCover: item.is_display_cover === 1, displayFlipHorizontal: item.display_flip_horizontal === 1, sortOrder: item.sort_order,
     })),
     interiorPhotos: media.filter((item) => item.variant_id === variant.id && item.photo_group === "interior").map((item) => ({
-      id: item.id, publicUrl: item.public_url, objectKey: item.object_key, isCover: item.is_cover === 1, sortOrder: item.sort_order,
+      id: item.id, publicUrl: item.public_url, objectKey: item.object_key, isCover: item.is_cover === 1, isDisplayCover: item.is_display_cover === 1, displayFlipHorizontal: item.display_flip_horizontal === 1, sortOrder: item.sort_order,
     })),
     detailPhotos: media.filter((item) => item.variant_id === variant.id && item.photo_group === "detail").map((item) => ({
-      id: item.id, publicUrl: item.public_url, objectKey: item.object_key, isCover: item.is_cover === 1, sortOrder: item.sort_order,
+      id: item.id, publicUrl: item.public_url, objectKey: item.object_key, isCover: item.is_cover === 1, isDisplayCover: item.is_display_cover === 1, displayFlipHorizontal: item.display_flip_horizontal === 1, sortOrder: item.sort_order,
     })),
   }));
 

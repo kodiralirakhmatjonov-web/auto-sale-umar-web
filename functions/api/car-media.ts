@@ -27,6 +27,12 @@ type MediaEnv = Env & { MEDIA: R2BucketLike };
 
 type PhotoGroup = "exterior" | "interior" | "detail";
 
+interface UpdateMediaBody {
+  id?: unknown;
+  isDisplayCover?: unknown;
+  displayFlipHorizontal?: unknown;
+}
+
 function cleanKey(value: string): string | null {
   const key = value.trim();
   if (!key || key.length > 700 || key.includes("..") || !key.startsWith("cars/")) return null;
@@ -39,6 +45,10 @@ function integerField(form: FormData, name: string, min: number, max: number): n
   const parsed = Number(raw);
   if (!Number.isSafeInteger(parsed) || parsed < min || parsed > max) return null;
   return parsed;
+}
+
+function boolFromUnknown(value: unknown): boolean | null {
+  return typeof value === "boolean" ? value : null;
 }
 
 function extensionFor(file: File): string {
@@ -177,6 +187,8 @@ export async function onRequestPost(context: {
         group,
         publicUrl,
         isCover,
+        isDisplayCover: false,
+        displayFlipHorizontal: false,
       },
     }, 201);
   } catch (error) {
@@ -186,6 +198,109 @@ export async function onRequestPost(context: {
   }
 }
 
+
+
+export async function onRequestPatch(context: {
+  request: Request;
+  env: MediaEnv;
+}): Promise<Response> {
+  const { request, env } = context;
+  if (!env.DB || !env.AUTH_PEPPER || !env.MEDIA) {
+    return json({ success: false, error: "D1 или R2 MEDIA не подключены." }, 500);
+  }
+
+  const currentUser = await getAuthenticatedUser(request, env);
+  if (!currentUser) return json({ success: false, error: "Требуется вход в систему." }, 401);
+  if (currentUser.role !== "super_admin" && currentUser.role !== "admin" && currentUser.role !== "sales_manager") {
+    return json({ success: false, error: "Недостаточно прав для изменения фотографий." }, 403);
+  }
+
+  let body: UpdateMediaBody;
+  try {
+    body = await request.json() as UpdateMediaBody;
+  } catch {
+    return json({ success: false, error: "Некорректный JSON-запрос." }, 400);
+  }
+
+  const id = typeof body.id === "number" ? body.id : Number(body.id);
+  if (!Number.isSafeInteger(id) || id < 1) {
+    return json({ success: false, error: "Некорректный ID фотографии." }, 400);
+  }
+
+  const isDisplayCover = boolFromUnknown(body.isDisplayCover);
+  const displayFlipHorizontal = boolFromUnknown(body.displayFlipHorizontal);
+  if (isDisplayCover == null && displayFlipHorizontal == null) {
+    return json({ success: false, error: "Нет изменений для сохранения." }, 400);
+  }
+
+  const media = await env.DB.prepare(
+    `SELECT id, car_id, variant_id, photo_group, is_display_cover, display_flip_horizontal
+     FROM car_variant_media
+     WHERE id = ?1
+     LIMIT 1`,
+  ).bind(id).first<{
+    id: number;
+    car_id: number;
+    variant_id: number;
+    photo_group: string;
+    is_display_cover: number;
+    display_flip_horizontal: number;
+  }>();
+
+  if (!media) return json({ success: false, error: "Фотография не найдена." }, 404);
+
+  if (isDisplayCover != null && media.photo_group !== "exterior") {
+    return json({ success: false, error: "Вторая TV-обложка доступна только для фотографий кузова." }, 400);
+  }
+
+  try {
+    if (isDisplayCover != null) {
+      if (isDisplayCover) {
+        await env.DB.prepare(`UPDATE car_variant_media SET is_display_cover = 0 WHERE car_id = ?1`).bind(media.car_id).run();
+      }
+      await env.DB.prepare(`UPDATE car_variant_media SET is_display_cover = ?1 WHERE id = ?2`).bind(isDisplayCover ? 1 : 0, id).run();
+    }
+
+    if (displayFlipHorizontal != null) {
+      await env.DB.prepare(`UPDATE car_variant_media SET display_flip_horizontal = ?1 WHERE id = ?2`).bind(displayFlipHorizontal ? 1 : 0, id).run();
+    }
+
+    const updated = await env.DB.prepare(
+      `SELECT id, car_id, variant_id, public_url, photo_group, is_cover, is_display_cover, display_flip_horizontal, sort_order
+       FROM car_variant_media
+       WHERE id = ?1
+       LIMIT 1`,
+    ).bind(id).first<{
+      id: number;
+      car_id: number;
+      variant_id: number;
+      public_url: string;
+      photo_group: string;
+      is_cover: number;
+      is_display_cover: number;
+      display_flip_horizontal: number;
+      sort_order: number;
+    }>();
+
+    return json({
+      success: true,
+      media: updated ? {
+        id: updated.id,
+        carId: updated.car_id,
+        variantId: updated.variant_id,
+        publicUrl: updated.public_url,
+        group: updated.photo_group,
+        isCover: updated.is_cover === 1,
+        isDisplayCover: updated.is_display_cover === 1,
+        displayFlipHorizontal: updated.display_flip_horizontal === 1,
+        sortOrder: updated.sort_order,
+      } : null,
+    });
+  } catch (error) {
+    console.error("Car media patch failed", error);
+    return json({ success: false, error: "Не удалось обновить фотографию." }, 500);
+  }
+}
 
 export async function onRequestDelete(context: {
   request: Request;
@@ -235,5 +350,5 @@ export async function onRequestDelete(context: {
 }
 
 export function onRequest(): Response {
-  return json({ success: false, error: "Используйте GET, POST или DELETE." }, 405, { allow: "GET, POST, DELETE" });
+  return json({ success: false, error: "Используйте GET, POST, PATCH или DELETE." }, 405, { allow: "GET, POST, PATCH, DELETE" });
 }

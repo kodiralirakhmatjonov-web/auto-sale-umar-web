@@ -7,11 +7,14 @@ import styles from "./display.module.css";
 type CarStatus = "in_stock" | "in_showroom" | "in_transit" | "made_to_order" | "reserved" | "sold" | "hidden";
 type Currency = "USD" | "UZS" | "EUR";
 type DisplayPhase = "loading" | "intro" | "welcome" | "catalog";
+type SceneMode = "dark" | "light";
 
 interface CatalogPhoto {
   id: number;
   url: string;
   isCover: boolean;
+  isDisplayCover?: boolean;
+  displayFlipHorizontal?: boolean;
   sortOrder: number;
 }
 
@@ -114,13 +117,32 @@ function formatPrice(car: DisplayCar): string {
   return `${value} СУМ`;
 }
 
-function carImage(car: DisplayCar): string {
-  if (car.coverUrl) return car.coverUrl;
+function primaryPhoto(car: DisplayCar): CatalogPhoto | null {
   for (const variant of car.variants ?? []) {
     const cover = variant.photos?.find((photo) => photo.isCover) ?? variant.photos?.[0];
-    if (cover?.url) return cover.url;
+    if (cover?.url) return cover;
   }
-  return "/intro-poster.jpg";
+  return car.coverUrl ? { id: -1, url: car.coverUrl, isCover: true, sortOrder: 0 } : null;
+}
+
+function carImage(car: DisplayCar): string {
+  return primaryPhoto(car)?.url ?? "/intro-poster.jpg";
+}
+
+function secondChainPhoto(car: DisplayCar): CatalogPhoto | null {
+  for (const variant of car.variants ?? []) {
+    const displayCover = variant.photos?.find((photo) => photo.isDisplayCover);
+    if (displayCover?.url) return displayCover;
+  }
+  return primaryPhoto(car);
+}
+
+function displayAsset(car: DisplayCar, sceneMode: SceneMode): { src: string; flipped: boolean } {
+  const photo = sceneMode === "light" ? secondChainPhoto(car) : primaryPhoto(car);
+  return {
+    src: photo?.url ?? "/intro-poster.jpg",
+    flipped: Boolean(sceneMode === "light" && photo?.displayFlipHorizontal),
+  };
 }
 
 function normalizeFuel(value: string | null): string {
@@ -176,7 +198,21 @@ function clampIndex(value: number, length: number): number {
 
 function catalogSignature(cars: DisplayCar[]): string {
   return cars
-    .map((car) => [car.id, car.slug, car.status, car.price ?? "", car.currency, car.priceOnRequest ? 1 : 0, car.coverUrl ?? carImage(car)].join("|"))
+    .map((car) => {
+      const darkSrc = car.coverUrl ?? carImage(car);
+      const lightPhoto = secondChainPhoto(car);
+      return [
+        car.id,
+        car.slug,
+        car.status,
+        car.price ?? "",
+        car.currency,
+        car.priceOnRequest ? 1 : 0,
+        darkSrc,
+        lightPhoto?.url ?? "",
+        lightPhoto?.displayFlipHorizontal ? 1 : 0,
+      ].join("|");
+    })
     .join("||");
 }
 
@@ -227,6 +263,7 @@ export default function DisplayPage() {
   const [time, setTime] = useState(() => new Date());
   const [error, setError] = useState(false);
   const [phase, setPhase] = useState<DisplayPhase>("loading");
+  const [sceneMode, setSceneMode] = useState<SceneMode>("dark");
   const [introCycle, setIntroCycle] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [fullscreenSupported, setFullscreenSupported] = useState(false);
@@ -307,9 +344,10 @@ export default function DisplayPage() {
     }
   }, [fullscreenSupported]);
 
-  const startIntro = useCallback(
-    (targetIndex: number) => {
+  const startSequence = useCallback(
+    (nextMode: SceneMode, targetIndex: number) => {
       pendingIndexRef.current = clampIndex(targetIndex, cars.length);
+      setSceneMode(nextMode);
       setPhase("intro");
       setIntroCycle((current) => current + 1);
     },
@@ -397,15 +435,17 @@ export default function DisplayPage() {
     for (let offset = 0; offset < priorityCount; offset += 1) {
       const displayCar = cars[(index + offset) % cars.length];
       if (!displayCar) continue;
-      priorityUrls.push(carImage(displayCar), qrUrl(displayCar.slug));
+      priorityUrls.push(carImage(displayCar), displayAsset(displayCar, "light").src, qrUrl(displayCar.slug));
     }
     priorityUrls.forEach(warmAsset);
 
     const queue: string[] = [];
     for (const displayCar of cars) {
       const imageSrc = carImage(displayCar);
+      const secondSrc = displayAsset(displayCar, "light").src;
       const qrSrc = qrUrl(displayCar.slug);
       if (!warmedAssetsRef.current.has(imageSrc)) queue.push(imageSrc);
+      if (!warmedAssetsRef.current.has(secondSrc)) queue.push(secondSrc);
       if (!warmedAssetsRef.current.has(qrSrc)) queue.push(qrSrc);
     }
 
@@ -442,15 +482,16 @@ export default function DisplayPage() {
 
   useEffect(() => {
     if (cars.length > 0 && phase === "loading") {
-      startIntro(index);
+      startSequence("dark", index);
     }
-  }, [cars.length, index, phase, startIntro]);
+  }, [cars.length, index, phase, startSequence]);
 
   useEffect(() => {
     if (phase !== "intro") return;
-    const fallback = window.setTimeout(() => finishIntro(), INTRO_FALLBACK_MS);
+    const introDuration = sceneMode === "dark" ? INTRO_FALLBACK_MS : 2_300;
+    const fallback = window.setTimeout(() => finishIntro(), introDuration);
     return () => window.clearTimeout(fallback);
-  }, [finishIntro, introCycle, phase]);
+  }, [finishIntro, introCycle, phase, sceneMode]);
 
   useEffect(() => {
     if (phase !== "welcome") return;
@@ -462,13 +503,13 @@ export default function DisplayPage() {
     if (phase !== "catalog" || cars.length === 0) return;
     const rotation = window.setTimeout(() => {
       if (index >= cars.length - 1) {
-        startIntro(0);
+        startSequence(sceneMode === "dark" ? "light" : "dark", 0);
         return;
       }
       setIndex((current) => clampIndex(current + 1, cars.length));
     }, ROTATION_MS);
     return () => window.clearTimeout(rotation);
-  }, [cars.length, index, phase, startIntro]);
+  }, [cars.length, index, phase, sceneMode, startSequence]);
 
   const car = cars[index] ?? null;
   const counter = useMemo(() => {
@@ -481,15 +522,21 @@ export default function DisplayPage() {
     ? [car.year ? String(car.year) : null, car.engineText || normalizeFuel(car.fuelType)].filter(Boolean).join(" · ")
     : "";
   const country = car?.countryCode ? COUNTRY_LABELS[car.countryCode] ?? car.countryCode : null;
-  const image = car ? carImage(car) : "/intro-poster.jpg";
+  const activeAsset = car ? displayAsset(car, sceneMode) : { src: "/intro-poster.jpg", flipped: false };
+  const image = activeAsset.src;
 
   return (
-    <main ref={rootRef} className={styles.displayRoot}>
+    <main ref={rootRef} className={styles.displayRoot} data-scene-mode={sceneMode}>
       <div className={styles.texture} aria-hidden="true" />
       <div className={styles.ambientGlow} aria-hidden="true" />
 
       {phase === "catalog" ? (
-        <button type="button" className={styles.floatingFullscreenButton} onClick={() => void toggleFullscreen()}>
+        <button
+          type="button"
+          className={styles.floatingFullscreenButton}
+          data-tone={sceneMode}
+          onClick={() => void toggleFullscreen()}
+        >
           <span className={styles.fullscreenIcon} aria-hidden="true">
             {isFullscreen ? (
               <svg viewBox="0 0 24 24" focusable="false">
@@ -509,63 +556,110 @@ export default function DisplayPage() {
 
       <AnimatePresence initial={false} mode="sync">
         {phase === "intro" ? (
-          <motion.section
-            key={`intro-${introCycle}`}
-            className={styles.introScene}
-            initial={{ opacity: 0, scale: 1.004 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.998 }}
-            transition={{ duration: 1.45, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <video
-              key={`intro-video-${introCycle}`}
-              className={styles.introVideo}
-              autoPlay
-              muted
-              playsInline
-              preload="auto"
-              poster="/intro-poster.jpg"
-              onEnded={finishIntro}
+          sceneMode === "dark" ? (
+            <motion.section
+              key={`intro-${sceneMode}-${introCycle}`}
+              className={styles.introScene}
+              initial={{ opacity: 0, scale: 1.004 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.998 }}
+              transition={{ duration: 1.45, ease: [0.22, 1, 0.36, 1] }}
             >
-              <source src="/intro.mp4" type="video/mp4" />
-            </video>
-            <div className={styles.introVeil} aria-hidden="true" />
-            <div className={styles.introBrand}>
-              <img src="/brand/asu-wordmark-white.png" alt="Auto Sale Umar" />
-              <span>SHOWROOM DISPLAY</span>
-              <strong>PREMIUM COLLECTION</strong>
-            </div>
-          </motion.section>
+              <video
+                key={`intro-video-${introCycle}`}
+                className={styles.introVideo}
+                autoPlay
+                muted
+                playsInline
+                preload="auto"
+                poster="/intro-poster.jpg"
+                onEnded={finishIntro}
+              >
+                <source src="/intro.mp4" type="video/mp4" />
+              </video>
+              <div className={styles.introVeil} aria-hidden="true" />
+              <div className={styles.introBrand}>
+                <img src="/brand/asu-wordmark-white.png" alt="Auto Sale Umar" />
+                <span>SHOWROOM DISPLAY</span>
+                <strong>PREMIUM COLLECTION</strong>
+              </div>
+            </motion.section>
+          ) : (
+            <motion.section
+              key={`intro-${sceneMode}-${introCycle}`}
+              className={styles.lightIntroScene}
+              initial={{ opacity: 0, scale: 1.004 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.998 }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <div className={styles.lightIntroBrand}>
+                <img src="/brand/asu-wordmark-black.png" alt="Auto Sale Umar" />
+                <span>SHOWROOM DISPLAY</span>
+                <strong>TV MODE · SECOND CHAIN</strong>
+              </div>
+            </motion.section>
+          )
         ) : phase === "welcome" ? (
-          <motion.section
-            key={`welcome-${introCycle}`}
-            className={styles.welcomeScene}
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 1 }}
-          >
-            <div className={styles.welcomeShade} aria-hidden="true" />
-            <div className={styles.welcomeBlackout} aria-hidden="true" />
-
-            <motion.div
-              className={styles.welcomeRu}
-              initial={{ opacity: 0 }}
+          sceneMode === "dark" ? (
+            <motion.section
+              key={`welcome-${sceneMode}-${introCycle}`}
+              className={styles.welcomeScene}
+              initial={{ opacity: 1 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.92, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              exit={{ opacity: 1 }}
             >
-              <span>ДОБРО ПОЖАЛОВАТЬ</span>
-              <strong>В ШОУРУМ</strong>
-            </motion.div>
+              <div className={styles.welcomeShade} aria-hidden="true" />
+              <div className={styles.welcomeBlackout} aria-hidden="true" />
 
-            <motion.img
-              className={styles.welcomeLogo}
-              src="/brand/asu-wordmark-white.png"
-              alt="Auto Sale Umar"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.96 }}
-              transition={{ delay: 1.22, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
-            />
-          </motion.section>
+              <motion.div
+                className={styles.welcomeRu}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.92, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <span>ДОБРО ПОЖАЛОВАТЬ</span>
+                <strong>В ШОУРУМ</strong>
+              </motion.div>
+
+              <motion.img
+                className={styles.welcomeLogo}
+                src="/brand/asu-wordmark-white.png"
+                alt="Auto Sale Umar"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.96 }}
+                transition={{ delay: 1.22, duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+              />
+            </motion.section>
+          ) : (
+            <motion.section
+              key={`welcome-${sceneMode}-${introCycle}`}
+              className={styles.lightWelcomeScene}
+              initial={{ opacity: 1 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 1 }}
+            >
+              <motion.div
+                className={styles.lightWelcomeCopy}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.24, duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <span>ДОБРО ПОЖАЛОВАТЬ</span>
+                <strong>В ШОУРУМ</strong>
+                <small>TV MODE · WHITE SEQUENCE</small>
+              </motion.div>
+
+              <motion.img
+                className={styles.lightWelcomeLogo}
+                src="/brand/asu-wordmark-black.png"
+                alt="Auto Sale Umar"
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.42, duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
+              />
+            </motion.section>
+          )
         ) : !car ? (
           <motion.section
             key="loading"
@@ -581,10 +675,10 @@ export default function DisplayPage() {
               <strong>{error ? "ОБНОВЛЯЕМ ДАННЫЕ" : "ЗАГРУЖАЕМ КОЛЛЕКЦИЮ"}</strong>
             </div>
           </motion.section>
-        ) : (
+        ) : sceneMode === "dark" ? (
           <motion.section
             className={styles.scene}
-            key={`${car.id}-${car.slug}`}
+            key={`${sceneMode}-${car.id}-${car.slug}`}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -597,6 +691,7 @@ export default function DisplayPage() {
                   type="button"
                   className={styles.fullscreenButton}
                   data-supported={fullscreenSupported ? "true" : "false"}
+                  data-tone={sceneMode}
                   onClick={() => void toggleFullscreen()}
                 >
                   <span className={styles.fullscreenIcon} aria-hidden="true">
@@ -613,7 +708,7 @@ export default function DisplayPage() {
                   <span>{fullscreenLabel}</span>
                 </button>
 
-                <div className={styles.displayMeta}>
+                <div className={styles.displayMeta} data-tone={sceneMode}>
                   <span>SHOWROOM DISPLAY</span>
                   <i aria-hidden="true" />
                   <time>{formatTime(time)}</time>
@@ -681,11 +776,105 @@ export default function DisplayPage() {
 
             <footer className={styles.footerBar}>
               <div className={styles.progressRail} aria-hidden="true">
-                <span key={`${car.id}-progress`} />
+                <span key={`${sceneMode}-${car.id}-progress`} />
               </div>
               <div className={styles.footerMeta}>
                 <strong>{counter}</strong>
                 <span>АВТОМОБИЛИ</span>
+              </div>
+            </footer>
+          </motion.section>
+        ) : (
+          <motion.section
+            className={`${styles.scene} ${styles.sceneLight}`}
+            key={`${sceneMode}-${car.id}-${car.slug}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.15, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <header className={`${styles.topBar} ${styles.topBarLight}`}>
+              <img src="/brand/asu-wordmark-black.png" alt="Auto Sale Umar" />
+              <div className={styles.topBarRight}>
+                <button
+                  type="button"
+                  className={styles.fullscreenButton}
+                  data-supported={fullscreenSupported ? "true" : "false"}
+                  data-tone={sceneMode}
+                  onClick={() => void toggleFullscreen()}
+                >
+                  <span className={styles.fullscreenIcon} aria-hidden="true">
+                    {isFullscreen ? (
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M9 4H4v5M15 4h5v5M4 15v5h5M20 15v5h-5" />
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5" />
+                      </svg>
+                    )}
+                  </span>
+                  <span>{fullscreenLabel}</span>
+                </button>
+
+                <div className={styles.displayMeta} data-tone={sceneMode}>
+                  <span>TV MODE · WHITE</span>
+                  <i aria-hidden="true" />
+                  <time>{formatTime(time)}</time>
+                </div>
+              </div>
+            </header>
+
+            <section className={styles.lightContent}>
+              <div className={styles.lightStage}>
+                <motion.img
+                  key={`${image}-${activeAsset.flipped ? "flipped" : "plain"}`}
+                  className={styles.lightCarImage}
+                  style={{ scaleX: activeAsset.flipped ? -1 : 1 }}
+                  src={image}
+                  alt={`${car.brand} ${car.model}`}
+                  loading="eager"
+                  decoding="async"
+                  initial={{ opacity: 0, x: -120 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 180 }}
+                  transition={{ duration: 0.95, ease: [0.22, 1, 0.36, 1] }}
+                  onError={(event: SyntheticEvent<HTMLImageElement>) => {
+                    const target = event.currentTarget;
+                    if (!target.src.endsWith("/intro-poster.jpg")) target.src = "/intro-poster.jpg";
+                  }}
+                />
+
+                <motion.div
+                  className={styles.lightTextBlock}
+                  initial={{ opacity: 0, x: 32 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -40 }}
+                  transition={{ delay: 0.18, duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  <div className={styles.selectionLabelLight}>AUTO SALE UMAR · SIDE PROFILE</div>
+                  <div className={styles.lightIdentity}>
+                    <span>{car.brand.toLocaleUpperCase("ru-RU")}</span>
+                    <h1>{car.model.toLocaleUpperCase("ru-RU")}</h1>
+                    {car.trim ? <p>{car.trim}</p> : null}
+                  </div>
+                  <div className={styles.lightMetaLine}>{yearLine || "PREMIUM"}</div>
+                  <div className={styles.lightStatusRow}>
+                    <StatusPill status={car.status} />
+                    <strong className={styles.lightPrice}>{formatPrice(car)}</strong>
+                  </div>
+                  <div className={styles.lightDescription}>{displayDescription(car)}</div>
+                </motion.div>
+              </div>
+            </section>
+
+            <footer className={`${styles.footerBar} ${styles.footerBarLight}`}>
+              <div className={`${styles.progressRail} ${styles.progressRailLight}`} aria-hidden="true">
+                <span key={`${sceneMode}-${car.id}-progress`} />
+              </div>
+              <div className={`${styles.footerMeta} ${styles.footerMetaLight}`}>
+                <strong>{counter}</strong>
+                <span>TV MODE 2</span>
               </div>
             </footer>
           </motion.section>
