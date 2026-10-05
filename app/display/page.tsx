@@ -263,7 +263,7 @@ export default function DisplayPage() {
   const [time, setTime] = useState(() => new Date());
   const [error, setError] = useState(false);
   const [phase, setPhase] = useState<DisplayPhase>("loading");
-  const [sceneMode, setSceneMode] = useState<SceneMode>("dark");
+  const [sceneMode, setSceneMode] = useState<SceneMode>("light");
   const [forcedSceneMode, setForcedSceneMode] = useState<SceneMode | null>(null);
   const [modeReady, setModeReady] = useState(false);
   const [introCycle, setIntroCycle] = useState(0);
@@ -276,6 +276,7 @@ export default function DisplayPage() {
   const pendingIndexRef = useRef<number | null>(0);
   const warmedAssetsRef = useRef<Set<string>>(new Set());
   const catalogSignatureRef = useRef<string>("");
+  const loadingStartedAtRef = useRef<number>(Date.now());
 
   useEffect(() => {
     currentSlugRef.current = cars[index]?.slug ?? null;
@@ -360,8 +361,8 @@ export default function DisplayPage() {
     (nextMode: SceneMode, targetIndex: number) => {
       pendingIndexRef.current = clampIndex(targetIndex, cars.length);
       setSceneMode(nextMode);
-      setPhase("intro");
       setIntroCycle((current) => current + 1);
+      setPhase(nextMode === "light" ? "welcome" : "intro");
     },
     [cars.length],
   );
@@ -493,10 +494,17 @@ export default function DisplayPage() {
   }, []);
 
   useEffect(() => {
-    if (!modeReady) return;
-    if (cars.length > 0 && phase === "loading") {
-      startSequence(forcedSceneMode ?? "light", index);
-    }
+    if (!modeReady || cars.length === 0 || phase !== "loading") return;
+
+    const nextMode = forcedSceneMode ?? "light";
+    const elapsed = Date.now() - loadingStartedAtRef.current;
+    const remainingSplash = Math.max(1_250 - elapsed, 320);
+
+    const timer = window.setTimeout(() => {
+      startSequence(nextMode, index);
+    }, remainingSplash);
+
+    return () => window.clearTimeout(timer);
   }, [cars.length, forcedSceneMode, index, modeReady, phase, startSequence]);
 
   useEffect(() => {
@@ -647,9 +655,9 @@ export default function DisplayPage() {
             <motion.section
               key={`welcome-${sceneMode}-${introCycle}`}
               className={styles.lightWelcomeScene}
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 1 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { duration: 0.92, ease: [0.22, 1, 0.36, 1] } }}
+              exit={{ opacity: 0, transition: { duration: 0.82, ease: [0.4, 0, 0.2, 1] } }}
             >
               <motion.div
                 className={styles.lightWelcomeCopy}
@@ -659,31 +667,28 @@ export default function DisplayPage() {
               >
                 <span>ДОБРО ПОЖАЛОВАТЬ</span>
                 <strong>В ШОУРУМ</strong>
+                <motion.img
+                  className={styles.lightWelcomeLogo}
+                  src="/brand/asu-wordmark-black.png"
+                  alt="Auto Sale Umar"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.46, duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
+                />
               </motion.div>
-
-              <motion.img
-                className={styles.lightWelcomeLogo}
-                src="/brand/asu-wordmark-black.png"
-                alt="Auto Sale Umar"
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.46, duration: 0.72, ease: [0.22, 1, 0.36, 1] }}
-              />
             </motion.section>
           )
-        ) : !car ? (
+        ) : phase === "loading" || !car ? (
           <motion.section
             key="loading"
-            className={styles.loadingStage}
-            initial={{ opacity: 0 }}
+            className={`${styles.loadingStage} ${styles.loadingStageLight}`}
+            initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+            exit={{ opacity: 0, transition: { duration: 0.88, ease: [0.4, 0, 0.2, 1] } }}
           >
-            <img className={styles.loadingLogo} src="/brand/asu-wordmark-white.png" alt="Auto Sale Umar" />
-            <div className={styles.loadingCopy}>
-              <span>SHOWROOM DISPLAY</span>
-              <strong>{error ? "ОБНОВЛЯЕМ ДАННЫЕ" : "ЗАГРУЖАЕМ КОЛЛЕКЦИЮ"}</strong>
+            <div className={styles.loadingSpinner} aria-hidden="true" />
+            <div className={styles.loadingCopyLight}>
+              <strong>{error ? "ОБНОВЛЯЕМ КОЛЛЕКЦИЮ" : "ЗАГРУЖАЕМ КОЛЛЕКЦИЮ"}</strong>
             </div>
           </motion.section>
         ) : sceneMode === "dark" ? (
@@ -799,8 +804,8 @@ export default function DisplayPage() {
           <motion.section
             className={`${styles.scene} ${styles.sceneLight}`}
             key={`${sceneMode}-${car.id}-${car.slug}`}
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, transition: { duration: 0.78, ease: [0.22, 1, 0.36, 1] } }}
             exit={{ opacity: 1 }}
           >
             <header className={`${styles.topBar} ${styles.topBarLight}`}>

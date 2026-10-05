@@ -636,6 +636,46 @@
   letter-spacing: 0.02em;
 }
 
+
+.loadingStageLight {
+  background: #ffffff;
+  color: #111316;
+}
+
+.loadingSpinner {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  width: clamp(34px, 2.6vw, 58px);
+  height: clamp(34px, 2.6vw, 58px);
+  border: clamp(3px, 0.18vw, 5px) solid rgba(17, 19, 22, 0.12);
+  border-top-color: rgba(17, 19, 22, 0.82);
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  animation: showroomSpinner 0.92s linear infinite;
+}
+
+.loadingCopyLight {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  transform: translateX(-50%);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.loadingCopyLight strong {
+  color: rgba(17, 19, 22, 0.74);
+  font-size: clamp(18px, 1.02vw, 32px);
+  line-height: 1;
+  font-weight: 620;
+  letter-spacing: 0.08em;
+}
+
+@keyframes showroomSpinner {
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
 .introScene {
   overflow: hidden;
 }
@@ -838,7 +878,8 @@
 }
 
 .sceneLight::after {
-  background: #ffffff;
+  display: none;
+  animation: none;
 }
 
 .lightIntroScene {
@@ -887,15 +928,13 @@
 
 .lightWelcomeCopy {
   position: absolute;
-  inset: 0;
+  left: 50%;
+  top: 50%;
   width: min(76vw, 1480px);
-  margin: auto;
-  height: fit-content;
   display: grid;
-  justify-items: center;
-  align-content: center;
+  place-items: center;
   gap: clamp(16px, 1.8vh, 34px);
-  transform: translateY(-4vh);
+  transform: translate(-50%, -50%);
   text-align: center;
   text-transform: uppercase;
 }
@@ -921,13 +960,15 @@
 }
 
 .lightWelcomeLogo {
-  position: absolute;
-  left: 50%;
-  bottom: clamp(48px, 6vh, 112px);
+  position: relative;
+  display: block;
   width: clamp(280px, 20vw, 640px);
   height: auto;
   object-fit: contain;
-  transform: translateX(-50%);
+  object-position: center;
+  margin: clamp(28px, 4vh, 72px) auto 0;
+  justify-self: center;
+  align-self: center;
 }
 
 .lightContent {
