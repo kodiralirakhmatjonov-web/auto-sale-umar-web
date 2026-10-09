@@ -284,12 +284,10 @@ export default function DisplayPage() {
   }, [cars, index]);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const requestedMode = params.get("mode");
-    if (requestedMode === "light" || requestedMode === "dark") {
-      setForcedSceneMode(requestedMode);
-      setSceneMode(requestedMode);
-    }
+    // TV Mode temporarily runs only the white collection. Keep the dark scene
+    // implementation intact so it can be re-enabled without rebuilding it.
+    setForcedSceneMode("light");
+    setSceneMode("light");
     setModeReady(true);
   }, []);
 
@@ -857,6 +855,21 @@ export default function DisplayPage() {
                   </div>
                   <div className={styles.lightDescription}>{displayDescription(car)}</div>
                   <strong className={styles.lightPrice}>{formatPrice(car)}</strong>
+                  <a
+                    className={styles.lightCarQr}
+                    href={publicCarUrl(car.slug)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Открыть ${car.brand} ${car.model} на сайте`}
+                  >
+                    <img
+                      src={qrUrl(car.slug)}
+                      alt={`QR-код автомобиля ${car.brand} ${car.model}`}
+                      loading="eager"
+                      decoding="async"
+                    />
+                    <span>Сканируйте, чтобы открыть автомобиль</span>
+                  </a>
                 </motion.div>
 
                 <motion.div
